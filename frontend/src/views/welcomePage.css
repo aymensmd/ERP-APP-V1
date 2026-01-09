@@ -1,0 +1,138 @@
+/* Animations */
+.welcome-container {
+  padding: 30px;
+  transition: all 0.3s;
+}
+
+/* Container max width for large screens */
+.welcome-container {
+ 
+  margin: 0 auto;
+}
+
+.highlight-text {
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.promo-banner {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.banner-slide {
+  padding: 40px 24px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+}
+
+.banner-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 1000px;
+}
+
+.quick-action-card {
+  text-align: center;
+  transition: all 0.3s;
+  height: 100%;
+}
+
+.quick-action-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.action-icon {
+  font-size: 32px;
+  transition: all 0.3s;
+}
+
+.quick-action-card:hover .action-icon {
+  transform: scale(1.1);
+}
+
+.app-intro-card {
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.05) 0%, rgba(24, 144, 255, 0.01) 100%);
+}
+
+.screenshot-mockup {
+  height: 250px;
+  background: rgba(24, 144, 255, 0.1);
+  border-radius: 8px;
+  border: 1px dashed #1890ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1890ff;
+}
+
+.feature-card {
+  /* make the card fill its grid cell and allow the card body to center content */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 96px; /* ensures cards are same minimal height */
+  padding: 12px !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+}
+
+/* Grid wrapper for feature cards. Uses equal row heights so cards match size */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  grid-auto-rows: 1fr; /* makes all rows equal height */
+}
+
+/* Ensure the Ant Design card body stretches to fill the card so inner content can center vertically */
+.feature-card .ant-card-body {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .feature-card { min-height: 110px; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .banner-slide { height: 220px; padding: 28px; }
+  .welcome-container { padding: 16px; }
+  .promo-banner { height: auto; }
+}
+
+@media (max-width: 768px) {
+  .banner-slide { height: auto; padding: 18px; }
+  .screenshot-mockup { height: 180px; }
+  .promo-banner { border-radius: 6px; }
+  .welcome-container { padding: 12px; }
+  .quick-action-card { padding: 12px; }
+  .promo-banner .banner-content > h3 { font-size: 18px; }
+}
+
+@media (max-width: 480px) {
+  .banner-slide { padding: 12px; }
+  .welcome-container { padding: 8px; }
+  .promo-banner { box-shadow: none; }
+  .welcome-container .ant-row { margin-left: 0; margin-right: 0 }
+}
+
+/* Dark mode styles */
+.welcome-container.dark .quick-action-card {
+  background: #1f1f1f;
+}
+
+.welcome-container.dark .app-intro-card {
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.1) 0%, rgba(24, 144, 255, 0.05) 100%);
+}
+
+.welcome-container.dark .screenshot-mockup {
+  background: rgba(24, 144, 255, 0.05);
+  border-color: #177ddc;
+  color: #177ddc;
+}

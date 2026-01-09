@@ -1,0 +1,366 @@
+/* Main Layout */
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Fluid Background Container */
+.animated-background {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(230, 247, 255, 0.397) 0%, rgba(240, 249, 255, 0.6) 100%);
+}
+
+/* Enhanced Water Blob Styles */
+.water-blob {
+  position: absolute;
+  will-change: transform, border-radius;
+  mix-blend-mode: soft-light;
+  opacity: 0.9;
+  filter: blur(6px);
+  background: radial-gradient(circle, rgba(180, 220, 255, 0.8), rgba(100, 180, 240, 0.6));
+  animation-timing-function: cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+/* Organic Shape Variations with Morphing */
+.water-blob-1 {
+  width: 280px;
+  height: 240px;
+  animation: 
+    drift-1 24s infinite,
+    morph-1 16s infinite;
+  top: 15%;
+  right: 10%;
+}
+
+.water-blob-2 {
+  width: 180px;
+  height: 220px;
+  animation: 
+    drift-2 28s infinite reverse,
+    morph-2 14s infinite;
+  top: 55%;
+  right: 25%;
+}
+
+.water-blob-3 {
+  width: 320px;
+  height: 260px;
+  animation: 
+    drift-3 32s infinite,
+    morph-3 18s infinite;
+  top: 30%;
+  right: 35%;
+}
+
+.water-blob-4 {
+  width: 150px;
+  height: 190px;
+  animation: 
+    drift-4 36s infinite reverse,
+    morph-4 12s infinite;
+  top: 65%;
+  right: 15%;
+}
+
+/* Faster Drifting Animations */
+@keyframes drift-1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(50px, 40px) rotate(3deg); }
+  50% { transform: translate(30px, -60px) rotate(-4deg); }
+  75% { transform: translate(-70px, 30px) rotate(5deg); }
+}
+
+@keyframes drift-2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-60px, 30px) rotate(-4deg); }
+  50% { transform: translate(40px, 50px) rotate(3deg); }
+  75% { transform: translate(30px, -40px) rotate(6deg); }
+}
+
+@keyframes drift-3 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(70px, -30px) rotate(5deg); }
+  50% { transform: translate(-40px, 50px) rotate(-3deg); }
+  75% { transform: translate(50px, 40px) rotate(4deg); }
+}
+
+@keyframes drift-4 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-40px, -50px) rotate(-3deg); }
+  50% { transform: translate(60px, 30px) rotate(4deg); }
+  75% { transform: translate(-30px, 60px) rotate(-5deg); }
+}
+
+/* Continuous Shape Morphing Animations */
+@keyframes morph-1 {
+  0%, 100% { border-radius: 43% 57% 52% 48% / 62% 37% 63% 38%; }
+  33% { border-radius: 60% 40% 55% 45% / 47% 62% 38% 53%; }
+  66% { border-radius: 38% 62% 45% 55% / 53% 38% 62% 47%; }
+}
+
+@keyframes morph-2 {
+  0%, 100% { border-radius: 60% 40% 39% 61% / 57% 45% 55% 43%; }
+  33% { border-radius: 45% 55% 62% 38% / 43% 57% 43% 57%; }
+  66% { border-radius: 55% 45% 38% 62% / 57% 43% 57% 43%; }
+}
+
+@keyframes morph-3 {
+  0%, 100% { border-radius: 52% 48% 57% 43% / 39% 63% 37% 61%; }
+  33% { border-radius: 48% 52% 61% 39% / 63% 37% 63% 37%; }
+  66% { border-radius: 57% 43% 39% 61% / 37% 63% 37% 63%; }
+}
+
+@keyframes morph-4 {
+  0%, 100% { border-radius: 48% 52% 45% 55% / 63% 37% 63% 37%; }
+  33% { border-radius: 52% 48% 37% 63% / 45% 55% 45% 55%; }
+  66% { border-radius: 45% 55% 63% 37% / 52% 48% 52% 48%; }
+}
+
+/* Enhanced Water Surface Effects */
+.water-blob::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 25%;
+  width: 40%;
+  height: 30%;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  filter: blur(4px);
+  transform: rotate(15deg);
+  animation: shine 8s infinite;
+}
+
+.water-blob::after {
+  content: '';
+  position: absolute;
+  bottom: 20%;
+  right: 20%;
+  width: 30%;
+  height: 25%;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  filter: blur(3px);
+  transform: rotate(-10deg);
+  animation: shine 6s infinite reverse;
+}
+
+@keyframes shine {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.9; transform: scale(1.1); }
+}
+
+/* Login Container Styles */
+.login-container {
+  width: 100%;
+  max-width: 480px;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(22, 119, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1890ff 0%, #36cfc9 50%, #722ed1 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(22, 119, 255, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.login-card:hover::before {
+  transform: scaleX(1);
+}
+
+/* Rest of your existing styles remain unchanged */
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-logo {
+  height: 60px;
+  margin-bottom: 1rem;
+  object-fit: contain;
+}
+
+.login-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1677ff;
+  margin-bottom: 0.5rem;
+}
+
+.login-subtitle {
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 0;
+}
+
+/* Form Styles */
+.login-form .ant-form-item {
+  margin-bottom: 1.25rem;
+}
+
+.input-icon {
+  color: rgba(22, 119, 255, 0.8);
+}
+
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.forgot-password {
+  color: #1677ff;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.forgot-password:hover {
+  color: #0d5bcf;
+  text-decoration: underline;
+}
+
+.login-button {
+  height: 48px;
+  font-weight: 500;
+  font-size: 1rem;
+  border-radius: 8px;
+  background: #1677ff;
+  border: none;
+  transition: all 0.2s;
+}
+
+.login-button:hover {
+  background: #0d5bcf;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 91, 207, 0.2);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .login-page {
+    padding: 16px;
+  }
+
+  .login-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: auto;
+    padding: 1rem;
+  }
+  
+  .animated-background {
+    width: 100%;
+    opacity: 0.5;
+  }
+  
+  .login-card {
+    padding: 2rem;
+    max-width: 100%;
+  }
+  
+  .login-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-page {
+    padding: 12px;
+  }
+  
+  .login-card {
+    padding: 1.5rem;
+  }
+  
+  .login-logo {
+    height: 48px;
+  }
+}
+
+@media (max-width: 576px) {
+  .login-page {
+    padding: 8px;
+  }
+
+  .login-container {
+    padding: 0.5rem;
+  }
+  
+  .login-card {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+  
+  .login-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .login-logo {
+    height: 40px;
+  }
+  
+  .login-title {
+    font-size: 1.25rem;
+  }
+  
+  .login-subtitle {
+    font-size: 0.85rem;
+  }
+  
+  .login-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .login-button {
+    height: 44px;
+    font-size: 0.95rem;
+  }
+}

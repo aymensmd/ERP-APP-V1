@@ -1,0 +1,395 @@
+
+
+/* Dashboard Container */
+.dashboard-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Fixed sider helpers: match the JS-side widths (collapsed 80, expanded 200) */
+.sider {
+  transition: width 0.18s ease, left 0.18s ease;
+}
+.sider[aria-hidden="false"], .sider:not(.ant-layout-sider-collapsed) {
+  width: 200px !important;
+}
+.sider.ant-layout-sider-collapsed {
+  width: 80px !important;
+}
+
+/* Hide scrollbar visually for the sidebar but keep scrolling functional */
+.responsive-sidebar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.responsive-sidebar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Dashboard Header */
+.dashboard-header {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.dashboard-title {
+  color: #277dfe;
+  margin-bottom: 8px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-icon {
+  font-size: 28px;
+  margin-right: 12px;
+}
+
+.dashboard-subtitle {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* Metrics Cards */
+.metrics-row {
+  margin-bottom: 32px;
+}
+
+.metric-card {
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  height: 100%;
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+.metric-content {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+}
+
+.metric-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+}
+
+.employee-card .metric-icon-wrapper {
+  background-color: #e6f7ff;
+}
+.project-card .metric-icon-wrapper {
+  background-color: #f6ffed;
+}
+.task-card .metric-icon-wrapper {
+  background-color: #fff2e8;
+}
+.revenue-card .metric-icon-wrapper {
+  background-color: #f0f5ff;
+}
+
+.metric-icon {
+  font-size: 24px;
+}
+
+.employee-card .metric-icon {
+  color: #1890ff;
+}
+.project-card .metric-icon {
+  color: #52c41a;
+}
+.task-card .metric-icon {
+  color: #fa8c16;
+}
+.revenue-card .metric-icon {
+  color: #722ed1;
+}
+
+.metric-text {
+  flex: 1;
+}
+
+.metric-label {
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+  display: block;
+}
+
+.metric-value {
+  margin: 4px 0 !important;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.metric-trend {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.metric-trend.positive {
+  color: #52c41a;
+}
+.metric-trend.negative {
+  color: #ff4d4f;
+}
+
+.trend-icon {
+  margin-right: 4px;
+}
+
+/* Content Cards */
+.content-row {
+  margin-bottom: 24px;
+}
+
+.main-aard, .side-content-card {
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+.content-card-title {
+  color: rgba(0, 0, 0, 0.85);
+  font-weight: 500;
+}
+
+.content-card-extra {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.content-divider {
+  margin: 24px 0 !important;
+}
+
+.top-performers-title {
+  margin-bottom: 16px !important;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.performer-card {
+  border-radius: 8px !important;
+  transition: all 0.3s;
+  height: 100%;
+}
+
+.performer-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.performer-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.performer-avatar {
+  background-color: #277dfe;
+}
+
+.performer-details {
+  margin-left: 12px;
+}
+
+.performer-name {
+  display: block;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.performer-department {
+  font-size: 12px;
+}
+
+.performer-progress {
+  margin-top: 8px;
+}
+
+/* Recent Activities */
+.recent-activities {
+  padding: 0 24px 24px;
+}
+
+.activity-item {
+  margin-bottom: 16px;
+}
+
+.activity-header {
+  display: flex;
+  align-items: center;
+}
+
+.activity-badge {
+  margin-right: 8px;
+}
+
+.activity-user {
+  margin-right: 8px;
+}
+
+.activity-action {
+  font-size: 14px;
+}
+
+.activity-time {
+  margin-left: 24px;
+  font-size: 12px;
+  display: block;
+}
+
+/* Footer Styles */
+.dashboard-footer {
+  background-color: #f0f2f5;
+  padding: 48px 24px 24px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.footer-content {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-section {
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 24px;
+  padding: 0 16px;
+}
+
+.footer-title {
+  color: #277dfe;
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 8px;
+}
+
+.footer-links a {
+  color: rgba(0, 0, 0, 0.65);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.footer-links a:hover {
+  color: #277dfe;
+}
+
+.footer-bottom {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.copyright {
+  color: rgba(0, 0, 0, 0.45);
+  margin: 0;
+}
+
+/* Dark Mode Styles */
+.dark-theme .dashboard-title,
+.dark-theme .content-card-title,
+.dark-theme .top-performers-title,
+.dark-theme .performer-name {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark-theme .dashboard-subtitle,
+.dark-theme .content-card-extra,
+.dark-theme .metric-label,
+.dark-theme .performer-department,
+.dark-theme .activity-action,
+.dark-theme .activity-time {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.dark-theme .metric-value {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark-theme .dashboard-footer {
+  background-color: #1f1f1f;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark-theme .footer-links a {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.dark-theme .footer-links a:hover {
+  color: #277dfe;
+}
+
+.dark-theme .copyright {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.dark-theme .footer-bottom {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+  .dashboard-container {
+    padding: 20px;
+  }
+  
+  .metric-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .metric-icon-wrapper {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+  
+  .footer-section {
+    min-width: 50%;
+  }
+  
+  .metric-card {
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .footer-section {
+    min-width: 100%;
+    text-align: center;
+  }
+  
+  .footer-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}

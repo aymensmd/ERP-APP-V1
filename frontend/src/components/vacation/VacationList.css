@@ -1,0 +1,5 @@
+.table-row-hover:hover {
+  background-color: #f0f8ff !important;
+  transform: scale(1.01);
+  transition: transform 0.2s ease-in-out;
+}

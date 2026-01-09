@@ -1,0 +1,146 @@
+/* VacationComponent.module.css */
+
+.mainRow {
+  margin: 0;
+}
+
+.legendCard {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: #fffbe6;
+  box-shadow: 0 2px 8px #ffe58f;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.tipCard {
+  border-radius: 12px;
+  background: #f9fbff;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.toolsSection {
+  border-radius: 18px;
+  background: linear-gradient(135deg, #277dfe 0%, #6eb6ff 100%);
+  box-shadow: 0 2px 16px #b3d8ff;
+  min-width: 360px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
+}
+
+.toolsTitle {
+  width: 100%;
+  text-align: center;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 1px;
+  color: #fff;
+  margin-bottom: 18px;
+}
+
+.toolsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 120px);
+  gap: 24px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 260px;
+  position: relative;
+  overflow: visible;
+}
+
+.toolBoxWrapper {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px #e6f0ff;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  min-width: 120px;
+}
+
+.statsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.statsRow {
+  display: flex;
+  gap: 24px;
+}
+
+.statCard {
+  width: 110px;
+  height: 110px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 2px 8px #e6f0ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.vacListCard {
+  flex: 1;
+  background: #f0f5ff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #e6f0ff;
+  margin-right: 16px;
+}
+
+.vacListTitle {
+  color: #277dfe;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.vacListItemCard {
+  border-radius: 8px;
+  box-shadow: 0 1px 4px #e6f0ff;
+  background: #fff;
+}
+
+.vacTable {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #e6f0ff;
+  margin-top: 24px;
+}
+
+/* Table row coloring */
+.vac-table-row-even {
+  background: #f9fbff !important;
+}
+.vac-table-row-odd {
+  background: #fff !important;
+}
+
+/* Table hover */
+:global(.ant-table-tbody > tr:hover > td) {
+  background: #e6f7ff !important;
+}

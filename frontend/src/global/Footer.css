@@ -1,0 +1,32 @@
+/* Footer Styles */
+.ant-layout-footer {
+  transition: all 0.3s ease;
+}
+
+.footer-link {
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #1890ff !important;
+}
+
+/* Social Icons */
+.anticon {
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.anticon:hover {
+  transform: scale(1.1);
+  color: #1890ff !important;
+}
+
+/* Dark Mode Adjustments */
+.ant-layout-footer.dark-mode {
+  background-color: #1f1f1f !important;
+  border-top: 1px solid #303030;
+}
+
+.ant-layout-footer.dark-mode .ant-typography-secondary {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
