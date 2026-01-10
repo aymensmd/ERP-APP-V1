@@ -16,6 +16,7 @@ class EmployeeResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'employee_id' => $this->employee_id,
             'name' => $this->name,
             'email' => $this->email,
             'date_of_birth' => $this->date_of_birth,
@@ -32,6 +33,23 @@ class EmployeeResource extends JsonResource
             'role' => $this->whenLoaded('role', function () {
                 return new RoleResource($this->role);
             }),
+            'manager_id' => $this->manager_id,
+            'manager' => $this->whenLoaded('manager', function () {
+                return [
+                    'id' => $this->manager->id,
+                    'name' => $this->manager->name,
+                    'email' => $this->manager->email,
+                ];
+            }),
+            'position' => $this->position,
+            'hire_date' => $this->hire_date,
+            'salary' => $this->salary ? (float)$this->salary : null,
+            'employment_type' => $this->employment_type,
+            'status' => $this->status,
+            'notes' => $this->notes,
+            'emergency_contact_name' => $this->emergency_contact_name,
+            'emergency_contact_phone' => $this->emergency_contact_phone,
+            'emergency_contact_relation' => $this->emergency_contact_relation,
             'vacations' => $this->whenLoaded('vacations', function () {
                 return VacationResource::collection($this->vacations);
             }),

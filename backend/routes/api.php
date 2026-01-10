@@ -23,6 +23,8 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PermissionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -68,12 +70,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/departments/{department}', [DepartmentController::class, 'update'])->middleware('admin');
     Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->middleware('admin');
     
-    // Employees routes - Admin only for create/delete, users can update their own profile
-    Route::get('/employees', [EmployeeController::class, 'index']);
-    Route::get('/employees/{employee}', [EmployeeController::class, 'show']);
-    Route::post('/employees', [EmployeeController::class, 'store'])->middleware('admin');
-    Route::put('/employees/{employee}', [EmployeeController::class, 'update']); // Allows self-update, admin check in controller
-    Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->middleware('admin');
+    // Roles and Permissions routes
+    Route::get('/roles', [RoleController::class, 'index']); // Allow viewing for form dropdowns
+    Route::get('/permissions', [PermissionController::class, 'index'])->middleware('permission:permissions.view');
+    
+    // Employees routes - Permission-based access
+    Route::get('/employees', [EmployeeController::class, 'index'])->middleware('permission:employees.view');
+    Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->middleware('permission:employees.view');
+    Route::post('/employees', [EmployeeController::class, 'store'])->middleware('permission:employees.create');
+    Route::put('/employees/{employee}', [EmployeeController::class, 'update']); // Permission check in controller (allows self-update)
+    Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->middleware('permission:employees.delete');
     
     // Events routes - Admin only for delete, users can create/update their own
     Route::get('/events', [EventController::class, 'index']);
@@ -94,10 +100,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/vacations', [VacationController::class, 'index']); // Query param: ?user_id=123
     Route::post('/vacations', [VacationController::class, 'store']);
     
-    // Dashboard routes
-    Route::get('/dashboard/statistics', [DashboardController::class, 'statistics']);
-    Route::get('/dashboard/activities', [DashboardController::class, 'recentActivities']);
-    Route::get('/dashboard/performers', [DashboardController::class, 'topPerformers']);
+    // Home page routes - Accessible to all authenticated users
+    Route::get('/home/user-context', [DashboardController::class, 'userContext']);
+    Route::get('/home/urgent-items', [DashboardController::class, 'urgentItems']);
+    Route::get('/home/quick-actions', [DashboardController::class, 'quickActions']);
+    
+    // Dashboard routes - Protected with dashboard permission
+    Route::get('/dashboard/statistics', [DashboardController::class, 'statistics'])->middleware('permission:dashboard.view');
+    Route::get('/dashboard/activities', [DashboardController::class, 'recentActivities'])->middleware('permission:dashboard.view');
+    Route::get('/dashboard/performers', [DashboardController::class, 'topPerformers'])->middleware('permission:dashboard.view');
     
     // Projects routes (projects are events)
     Route::get('/projects', [ProjectController::class, 'index']);
@@ -137,22 +148,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/employees/{userId}/certifications', [EmployeeProfileController::class, 'addCertification']);
     Route::put('/certifications/{certificationId}', [EmployeeProfileController::class, 'updateCertification']);
     Route::delete('/certifications/{certificationId}', [EmployeeProfileController::class, 'deleteCertification']);
-    Route::get('/organizational-chart', [EmployeeProfileController::class, 'getOrganizationalChart']);
+    Route::get('/organizational-chart', [EmployeeProfileController::class, 'getOrganizationalChart'])->middleware('permission:org-chart.view');
     
     // Leads routes (CRM)
-    Route::get('/leads', [LeadController::class, 'index']);
-    Route::post('/leads', [LeadController::class, 'store']);
-    Route::get('/leads/{lead}', [LeadController::class, 'show']);
-    Route::put('/leads/{lead}', [LeadController::class, 'update']);
-    Route::delete('/leads/{lead}', [LeadController::class, 'destroy']);
-    Route::get('/leads/statistics/overview', [LeadController::class, 'statistics']);
+    Route::get('/leads', [LeadController::class, 'index'])->middleware('permission:leads.view');
+    Route::post('/leads', [LeadController::class, 'store'])->middleware('permission:leads.create');
+    Route::get('/leads/{lead}', [LeadController::class, 'show'])->middleware('permission:leads.view');
+    Route::put('/leads/{lead}', [LeadController::class, 'update'])->middleware('permission:leads.update');
+    Route::delete('/leads/{lead}', [LeadController::class, 'destroy'])->middleware('permission:leads.delete');
+    Route::get('/leads/statistics/overview', [LeadController::class, 'statistics'])->middleware('permission:leads.view');
+    Route::post('/leads/{lead}/convert', [LeadController::class, 'convert'])->middleware('permission:leads.convert');
     
     // Kanban Boards routes
-    Route::get('/kanban-boards', [KanbanBoardController::class, 'index']);
-    Route::post('/kanban-boards', [KanbanBoardController::class, 'store']);
-    Route::get('/kanban-boards/{board}', [KanbanBoardController::class, 'show']);
-    Route::put('/kanban-boards/{board}', [KanbanBoardController::class, 'update']);
-    Route::delete('/kanban-boards/{board}', [KanbanBoardController::class, 'destroy']);
+    Route::get('/kanban-boards', [KanbanBoardController::class, 'index'])->middleware('permission:kanban.view');
+    Route::post('/kanban-boards', [KanbanBoardController::class, 'store'])->middleware('permission:kanban.create');
+    Route::get('/kanban-boards/{board}', [KanbanBoardController::class, 'show'])->middleware('permission:kanban.view');
+    Route::put('/kanban-boards/{board}', [KanbanBoardController::class, 'update'])->middleware('permission:kanban.update');
+    Route::delete('/kanban-boards/{board}', [KanbanBoardController::class, 'destroy'])->middleware('permission:kanban.delete');
     
     // Kanban Tasks routes
     Route::post('/kanban-tasks', [KanbanTaskController::class, 'store']);
@@ -163,12 +175,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/task-dependencies/{dependency}', [KanbanTaskController::class, 'removeDependency']);
     
     // Customers routes (CRM)
-    Route::get('/customers', [CustomerController::class, 'index']);
-    Route::post('/customers', [CustomerController::class, 'store']);
-    Route::get('/customers/{customer}', [CustomerController::class, 'show']);
-    Route::put('/customers/{customer}', [CustomerController::class, 'update']);
-    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy']);
-    Route::post('/leads/{lead}/convert', [CustomerController::class, 'convertFromLead']);
+    Route::get('/customers', [CustomerController::class, 'index'])->middleware('permission:customers.view');
+    Route::post('/customers', [CustomerController::class, 'store'])->middleware('permission:customers.create');
+    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->middleware('permission:customers.view');
+    Route::put('/customers/{customer}', [CustomerController::class, 'update'])->middleware('permission:customers.update');
+    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->middleware('permission:customers.delete');
+    Route::post('/leads/{lead}/convert', [CustomerController::class, 'convertFromLead'])->middleware('permission:leads.convert');
     
     // Communications routes
     Route::get('/communications', [CommunicationController::class, 'index']);
@@ -177,35 +189,35 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/communications/{communication}', [CommunicationController::class, 'destroy']);
     
     // Invoices routes
-    Route::get('/invoices', [InvoiceController::class, 'index']);
-    Route::post('/invoices', [InvoiceController::class, 'store']);
-    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
-    Route::put('/invoices/{invoice}', [InvoiceController::class, 'update']);
-    Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy']);
-    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf']);
+    Route::get('/invoices', [InvoiceController::class, 'index'])->middleware('permission:invoices.view');
+    Route::post('/invoices', [InvoiceController::class, 'store'])->middleware('permission:invoices.create');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->middleware('permission:invoices.view');
+    Route::put('/invoices/{invoice}', [InvoiceController::class, 'update'])->middleware('permission:invoices.update');
+    Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->middleware('permission:invoices.delete');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->middleware('permission:invoices.view');
     
     // Payments routes
     Route::post('/payments', [PaymentController::class, 'store']);
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy']);
     
     // Onboarding routes
-    Route::get('/onboarding/checklist', [OnboardingController::class, 'index']);
-    Route::get('/onboarding/checklist/{userId}', [OnboardingController::class, 'index']);
-    Route::post('/onboarding/checklist/{userId}/create', [OnboardingController::class, 'createChecklist']);
-    Route::post('/onboarding/checklist/{userId}/add', [OnboardingController::class, 'addItem']);
-    Route::put('/onboarding/items/{itemId}', [OnboardingController::class, 'updateItem']);
-    Route::delete('/onboarding/items/{itemId}', [OnboardingController::class, 'deleteItem']);
-    Route::get('/onboarding/template', [OnboardingController::class, 'getTemplate']);
+    Route::get('/onboarding/checklist', [OnboardingController::class, 'index'])->middleware('permission:onboarding.view');
+    Route::get('/onboarding/checklist/{userId}', [OnboardingController::class, 'index'])->middleware('permission:onboarding.view');
+    Route::post('/onboarding/checklist/{userId}/create', [OnboardingController::class, 'createChecklist'])->middleware('permission:onboarding.create');
+    Route::post('/onboarding/checklist/{userId}/add', [OnboardingController::class, 'addItem'])->middleware('permission:onboarding.create');
+    Route::put('/onboarding/items/{itemId}', [OnboardingController::class, 'updateItem'])->middleware('permission:onboarding.update');
+    Route::delete('/onboarding/items/{itemId}', [OnboardingController::class, 'deleteItem'])->middleware('permission:onboarding.delete');
+    Route::get('/onboarding/template', [OnboardingController::class, 'getTemplate'])->middleware('permission:onboarding.view');
     
     // Shifts routes
-    Route::get('/shifts', [ShiftController::class, 'index']);
-    Route::post('/shifts', [ShiftController::class, 'store']);
-    Route::get('/shifts/{shift}', [ShiftController::class, 'show']);
-    Route::put('/shifts/{shift}', [ShiftController::class, 'update']);
-    Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy']);
-    Route::get('/shift-assignments', [ShiftController::class, 'assignments']);
-    Route::post('/shift-assignments', [ShiftController::class, 'assignShift']);
-    Route::put('/shift-assignments/{assignment}', [ShiftController::class, 'updateAssignment']);
-    Route::delete('/shift-assignments/{assignment}', [ShiftController::class, 'deleteAssignment']);
+    Route::get('/shifts', [ShiftController::class, 'index'])->middleware('permission:shifts.view');
+    Route::post('/shifts', [ShiftController::class, 'store'])->middleware('permission:shifts.create');
+    Route::get('/shifts/{shift}', [ShiftController::class, 'show'])->middleware('permission:shifts.view');
+    Route::put('/shifts/{shift}', [ShiftController::class, 'update'])->middleware('permission:shifts.update');
+    Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->middleware('permission:shifts.delete');
+    Route::get('/shift-assignments', [ShiftController::class, 'assignments'])->middleware('permission:shifts.view');
+    Route::post('/shift-assignments', [ShiftController::class, 'assignShift'])->middleware('permission:shifts.create');
+    Route::put('/shift-assignments/{assignment}', [ShiftController::class, 'updateAssignment'])->middleware('permission:shifts.update');
+    Route::delete('/shift-assignments/{assignment}', [ShiftController::class, 'deleteAssignment'])->middleware('permission:shifts.delete');
     });
 });

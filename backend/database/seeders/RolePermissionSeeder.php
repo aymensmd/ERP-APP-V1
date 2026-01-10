@@ -27,7 +27,8 @@ class RolePermissionSeeder extends Seeder
         // Manager role gets most permissions except admin-only
         $managerRole = Role::where('slug', 'manager')->first();
         if ($managerRole) {
-            $managerPermissions = Permission::where(function($query) {
+            // Get all permissions except Admin group, plus specific Admin permissions
+            $baseManagerPermissions = Permission::where(function($query) {
                     $query->whereNotIn('group', ['Admin'])
                           ->orWhere(function($q) {
                               $q->where('group', 'Admin')
@@ -37,8 +38,23 @@ class RolePermissionSeeder extends Seeder
                 ->pluck('id')
                 ->toArray();
             
+            // Add specific additional permissions for managers (in case they're in Admin group)
+            $additionalManagerPermissions = Permission::whereIn('name', [
+                'vacations.approve',
+                'departments.create',
+                'departments.update',
+                'departments.delete',
+                'employees.create',
+                'employees.update',
+                'employees.delete',
+                'events.delete',
+                'reports.generate',
+                'reports.export',
+            ])->pluck('id')->toArray();
+            
+            $managerPermissions = array_unique(array_merge($baseManagerPermissions, $additionalManagerPermissions));
             $managerRole->permissions()->sync($managerPermissions);
-            $this->command->info('Manager role assigned permissions');
+            $this->command->info('Manager role assigned ' . count($managerPermissions) . ' permissions');
         }
 
         // Employee role gets basic permissions
@@ -53,18 +69,20 @@ class RolePermissionSeeder extends Seeder
                 'events.create',
                 'events.update',
                 'projects.view',
+                'kanban.view',
                 'dashboard.view',
                 'time-tracking.view',
                 'time-tracking.manage',
                 'analytics.view',
                 'reports.view',
+                'org-chart.view',
+                'onboarding.view', // Can view their own onboarding
             ])->pluck('id')->toArray();
             
             $employeeRole->permissions()->sync($employeePermissions);
-            $this->command->info('Employee role assigned permissions');
+            $this->command->info('Employee role assigned ' . count($employeePermissions) . ' permissions');
         }
 
         $this->command->info('Role permissions seeded successfully!');
     }
 }
-

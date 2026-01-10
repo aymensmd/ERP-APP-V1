@@ -1,37 +1,58 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useStateContext } from '../contexts/ContextProvider';
+import { usePermissions } from '../hooks/usePermissions';
 
-const PrivateRoute = ({ children, allowedRoles = [] }) => {
+const PrivateRoute = ({ 
+  children, 
+  allowedRoles = [], 
+  requiredPermissions = [],
+  anyPermission = false 
+}) => {
   const { user, token } = useStateContext();
+  const { hasPermission, hasAnyPermission, hasAllPermissions, isAdmin, isManager, isEmployee } = usePermissions();
 
   // If no token, redirect to login
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
-  // If no roles required, allow access (private route for authenticated users)
-  if (allowedRoles.length === 0) {
-    return children;
-  }
+  // Check role-based access first (if specified)
+  if (allowedRoles.length > 0) {
+    const userRole = user?.role?.name?.toLowerCase();
+    const userRoleId = user?.role_id;
+    
+    const hasRoleAccess = allowedRoles.some(role => {
+      const roleLower = role?.toLowerCase();
+      if (roleLower === 'admin') {
+        return userRoleId === 1 || userRole === 'admin' || isAdmin();
+      }
+      if (roleLower === 'manager') {
+        return userRoleId === 2 || userRole === 'manager' || isManager();
+      }
+      if (roleLower === 'employee') {
+        return userRoleId === 3 || userRole === 'employee' || isEmployee();
+      }
+      return userRole === roleLower;
+    });
 
-  // Check if user has required role
-  // Admin is identified by role_id === 1
-  const isAdmin = user?.role_id === 1;
-  const userRole = user?.role?.name?.toLowerCase();
-  
-  // Check role by role_id (for admin) or role name
-  const hasAccess = allowedRoles.some(role => {
-    if (role === 'admin') {
-      return isAdmin;
+    if (!hasRoleAccess) {
+      return <Navigate to="/unauthorized" replace />;
     }
-    return userRole === role?.toLowerCase();
-  });
-
-  if (!hasAccess) {
-    return <Navigate to="/unauthorized" replace />;
   }
 
+  // Check permission-based access (if specified)
+  if (requiredPermissions.length > 0) {
+    const hasPermissionAccess = anyPermission
+      ? hasAnyPermission(requiredPermissions)
+      : hasAllPermissions(requiredPermissions);
+
+    if (!hasPermissionAccess) {
+      return <Navigate to="/unauthorized" replace />;
+    }
+  }
+
+  // If no restrictions, allow access (private route for authenticated users)
   return children;
 };
 

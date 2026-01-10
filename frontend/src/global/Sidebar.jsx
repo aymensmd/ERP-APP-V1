@@ -28,6 +28,7 @@ import {
 import { Menu, Spin } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStateContext } from '../contexts/ContextProvider';
+import { usePermissions } from '../hooks/usePermissions';
 
 function getItem(label, key, icon, children, type) {
   return {
@@ -41,6 +42,7 @@ function getItem(label, key, icon, children, type) {
 
 const Sidebar = () => {
   const { user, logout } = useStateContext();
+  const { hasPermission, hasAnyPermission, isAdmin, isManager } = usePermissions();
   const location = useLocation();
   const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
@@ -72,48 +74,113 @@ const Sidebar = () => {
   };
 
   const buildMenuItems = () => {
-    const items = [
-      getItem('Home', '/welcome', <HomeOutlined />),
-      getItem('Dashboard', '/dashboard', <WindowsOutlined />),
-      getItem('Profile', '/profile', <UserOutlined />),
-      getItem('Settings', '/settings', <SettingOutlined />),
-  // Future features
-  getItem('Projects', '/projects', <ProjectOutlined />),
-  getItem('Calendar', '/calendar', <CalendarOutlined />),
-  getItem('Notifications', '/notifications', <BellOutlined />),
-  getItem('Reports', '/reports', <BarChartOutlined />),
-  getItem('Analytics', '/analytics', <PieChartOutlined />),
-  getItem('Help Center', '/help', <QuestionCircleOutlined />),
-  getItem('Knowledge Base', '/knowledge', <BookOutlined />),
-  getItem('Time Tracking', '/timetracking', <ClockCircleOutlined />),
-  getItem('Surveys', '/surveys', <FormOutlined />),
-  getItem('Rewards', '/rewards', <GiftOutlined />),
-  getItem('Workflow Builder', 'workflow-builder', <ApartmentOutlined />),
-  getItem('Activity Logs', '/activity-logs', <HistoryOutlined />),
-  getItem('Leads', '/leads', <CustomerServiceOutlined />),
-  getItem('Customers', '/customers', <UsergroupAddOutlined />),
-  getItem('Invoices', '/invoices', <FileTextOutlined />),
-  getItem('Kanban Boards', '/kanban', <BranchesOutlined />),
-  getItem('Org Chart', '/organizational-chart', <UsergroupAddOutlined />),
-    ];
-
-    // Check if user is admin (role_id === 1)
-    const isAdmin = user?.role_id === 1;
-    if (isAdmin) {
-      items.push(
-        getItem('HR Management', 'hr', <UsergroupAddOutlined />, [
-          getItem('Employee Profiles', '/users_setting', <UserOutlined />),
-          getItem('Onboarding', '/onboarding', <CheckCircleOutlined />),
-          getItem('Shift Management', '/shifts', <ClockCircleOutlined />),
-          getItem('Leave Management', '/leaves', <UserOutlined />),
-        ])
-      );
+    const items = [];
+    
+    // Always visible items
+    if (hasPermission('dashboard.view')) {
+      items.push(getItem('Home', '/welcome', <HomeOutlined />));
+      items.push(getItem('Dashboard', '/dashboard', <WindowsOutlined />));
+    }
+    
+    items.push(getItem('Profile', '/profile', <UserOutlined />));
+    
+    if (hasPermission('settings.view')) {
+      items.push(getItem('Settings', '/settings', <SettingOutlined />));
     }
 
-    items.push(
-      getItem('Chat', '/dash/chat', <MessageOutlined />),
-      getItem('Logout', 'logout', loggingOut ? <Spin size="small" /> : <LogoutOutlined />)
-    );
+    // Projects
+    if (hasPermission('projects.view')) {
+      items.push(getItem('Projects', '/projects', <ProjectOutlined />));
+    }
+
+    // Calendar/Events
+    if (hasPermission('events.view')) {
+      items.push(getItem('Calendar', '/calendar', <CalendarOutlined />));
+    }
+
+    // Reports
+    if (hasPermission('reports.view')) {
+      items.push(getItem('Reports', '/reports', <BarChartOutlined />));
+    }
+
+    // Analytics
+    if (hasPermission('analytics.view')) {
+      items.push(getItem('Analytics', '/analytics', <PieChartOutlined />));
+    }
+
+    // Time Tracking
+    if (hasPermission('time-tracking.view')) {
+      items.push(getItem('Time Tracking', '/timetracking', <ClockCircleOutlined />));
+    }
+
+    // Activity Logs (Admin only typically)
+    if (hasPermission('audit-logs.view')) {
+      items.push(getItem('Activity Logs', '/activity-logs', <HistoryOutlined />));
+    }
+
+    // CRM - Leads
+    if (hasPermission('leads.view')) {
+      items.push(getItem('Leads', '/leads', <CustomerServiceOutlined />));
+    }
+
+    // CRM - Customers
+    if (hasPermission('customers.view')) {
+      items.push(getItem('Customers', '/customers', <UsergroupAddOutlined />));
+    }
+
+    // CRM - Invoices
+    if (hasPermission('invoices.view')) {
+      items.push(getItem('Invoices', '/invoices', <FileTextOutlined />));
+    }
+
+    // Kanban Boards
+    if (hasPermission('kanban.view')) {
+      items.push(getItem('Kanban Boards', '/kanban', <BranchesOutlined />));
+    }
+
+    // Organizational Chart
+    if (hasPermission('org-chart.view')) {
+      items.push(getItem('Org Chart', '/organizational-chart', <UsergroupAddOutlined />));
+    }
+
+    // HR Management Section (Admin/Manager)
+    const hrSubItems = [];
+    
+    // Employee Profiles - Admin and Manager only
+    if ((isAdmin() || isManager()) && hasPermission('employees.view')) {
+      hrSubItems.push(getItem('Employee Profiles', '/users_setting', <UserOutlined />));
+    }
+    
+    if (hasPermission('onboarding.view')) {
+      hrSubItems.push(getItem('Onboarding', '/onboarding', <CheckCircleOutlined />));
+    }
+    
+    if (hasPermission('shifts.view')) {
+      hrSubItems.push(getItem('Shift Management', '/shifts', <ClockCircleOutlined />));
+    }
+    
+    if (hasPermission('vacations.view')) {
+      hrSubItems.push(getItem('Leave Management', '/leaves', <UserOutlined />));
+    }
+
+    if (hrSubItems.length > 0) {
+      items.push(getItem('HR Management', 'hr', <UsergroupAddOutlined />, hrSubItems));
+    }
+
+    // Other items (always visible or with basic checks)
+    items.push(getItem('Chat', '/dash/chat', <MessageOutlined />));
+    
+    // Help & Knowledge Base (can be visible to all)
+    items.push(getItem('Help Center', '/help', <QuestionCircleOutlined />));
+    items.push(getItem('Knowledge Base', '/knowledge', <BookOutlined />));
+    
+    // Future features (can add permission checks later)
+    // items.push(getItem('Notifications', '/notifications', <BellOutlined />));
+    // items.push(getItem('Surveys', '/surveys', <FormOutlined />));
+    // items.push(getItem('Rewards', '/rewards', <GiftOutlined />));
+    // items.push(getItem('Workflow Builder', 'workflow-builder', <ApartmentOutlined />));
+    
+    items.push(getItem('Logout', 'logout', loggingOut ? <Spin size="small" /> : <LogoutOutlined />));
 
     return items;
   };

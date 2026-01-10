@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from '../axios';
 import { message } from 'antd';
+import { useStateContext } from './ContextProvider';
 
 const CompanyContext = createContext();
 
 export const CompanyProvider = ({ children }) => {
+  const { setUser } = useStateContext();
   const [currentCompany, setCurrentCompany] = useState(() => {
     const saved = localStorage.getItem('current_company');
     return saved ? JSON.parse(saved) : null;
@@ -12,6 +14,19 @@ export const CompanyProvider = ({ children }) => {
   
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Refresh user permissions when company changes
+  const refreshUserPermissions = async () => {
+    try {
+      const response = await axios.get('/user');
+      const userData = response.data.data || response.data;
+      setUser(userData);
+      localStorage.setItem('USER', JSON.stringify(userData));
+      localStorage.setItem('USER_DATA', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Error refreshing user permissions:', error);
+    }
+  };
 
   // Load user's companies
   const loadCompanies = async () => {
@@ -43,13 +58,16 @@ export const CompanyProvider = ({ children }) => {
   const switchCompany = async (companyId) => {
     try {
       setLoading(true);
-      await axios.post(`/companies/${companyId}/switch`);
       
       const company = companies.find(c => c.id === companyId || c.id === parseInt(companyId));
       if (company) {
         setCurrentCompany(company);
         localStorage.setItem('current_company_id', company.id.toString());
         localStorage.setItem('current_company', JSON.stringify(company));
+        
+        // Refresh user permissions for the new company context
+        await refreshUserPermissions();
+        
         message.success(`Switched to ${company.name}`);
         
         // Reload page to apply company scope to all queries
@@ -57,11 +75,20 @@ export const CompanyProvider = ({ children }) => {
       } else {
         // If company not in list, reload companies first
         await loadCompanies();
-        const updatedCompany = companies.find(c => c.id === companyId || c.id === parseInt(companyId));
+        const updatedCompanies = await axios.get('/companies/my').then(res => 
+          Array.isArray(res.data) ? res.data : []
+        );
+        setCompanies(updatedCompanies);
+        
+        const updatedCompany = updatedCompanies.find(c => c.id === companyId || c.id === parseInt(companyId));
         if (updatedCompany) {
           setCurrentCompany(updatedCompany);
           localStorage.setItem('current_company_id', updatedCompany.id.toString());
           localStorage.setItem('current_company', JSON.stringify(updatedCompany));
+          
+          // Refresh user permissions
+          await refreshUserPermissions();
+          
           window.location.reload();
         }
       }

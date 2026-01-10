@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'employee_id',
         'date_of_birth',
         'genre',
         'address',
@@ -30,6 +31,15 @@ class User extends Authenticatable
         'department_id',
         'role_id',
         'manager_id',
+        'position',
+        'hire_date',
+        'salary',
+        'employment_type',
+        'status',
+        'notes',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'emergency_contact_relation',
     ];
 
     /**
@@ -50,6 +60,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'date_of_birth' => 'date',
+        'hire_date' => 'date',
+        'salary' => 'decimal:2',
     ];
 
     /**

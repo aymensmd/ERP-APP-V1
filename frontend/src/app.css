@@ -1,10 +1,31 @@
 
 
+/* Design System - Spacing Tokens */
+:root {
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  
+  --border-radius-sm: 6px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Dashboard Container */
 .dashboard-container {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 /* Fixed sider helpers: match the JS-side widths (collapsed 80, expanded 200) */
@@ -58,16 +79,34 @@
 }
 
 .metric-card {
-  border-radius: 12px !important;
+  border-radius: var(--border-radius-lg) !important;
   border: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: var(--shadow-md) !important;
+  transition: all var(--transition-base);
   height: 100%;
+  cursor: pointer;
+  overflow: hidden;
 }
 
 .metric-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1890ff 0%, #36cfc9 100%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.metric-card:hover::before {
+  opacity: 1;
 }
 
 .metric-content {
@@ -154,10 +193,15 @@
   margin-bottom: 24px;
 }
 
-.main-aard, .side-content-card {
-  border-radius: 12px !important;
+.main-content-card, .side-content-card {
+  border-radius: var(--border-radius-lg) !important;
   border: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: var(--shadow-md) !important;
+  transition: all var(--transition-base);
+}
+
+.main-content-card:hover, .side-content-card:hover {
+  box-shadow: var(--shadow-lg) !important;
 }
 
 .content-card-title {
@@ -179,13 +223,15 @@
 }
 
 .performer-card {
-  border-radius: 8px !important;
-  transition: all 0.3s;
+  border-radius: var(--border-radius-md) !important;
+  transition: all var(--transition-base);
   height: 100%;
+  cursor: pointer;
 }
 
 .performer-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px);
 }
 
 .performer-info {
@@ -350,34 +396,174 @@
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Vacation Table Styles */
+.vacation-table .ant-table {
+  border-radius: var(--border-radius-md);
+}
+
+.vacation-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.85);
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.vacation-table .ant-table-tbody > tr:hover > td {
+  background: #f5f5f5;
+}
+
+.vacation-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Main Content Wrapper */
+.main-content-wrapper {
+  position: relative;
+}
+
+.main-content-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.05), transparent);
+}
+
+/* Smooth Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth Page Transitions */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Loading States */
+.ant-spin-nested-loading > div > .ant-spin {
+  max-height: none;
+}
+
+/* Card Improvements */
+.ant-card {
+  transition: all var(--transition-base);
+}
+
+.ant-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Button Improvements */
+.ant-btn {
+  transition: all var(--transition-fast);
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
+}
+
+.ant-btn-primary {
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2);
+}
+
+.ant-btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Input Improvements */
+.ant-input, .ant-input-password {
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast);
+}
+
+.ant-input:focus, .ant-input-password:focus {
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+/* Table Improvements */
+.ant-table {
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* Form Improvements */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+/* Select Improvements */
+.ant-select-selector {
+  border-radius: var(--border-radius-md) !important;
+}
+
+/* DatePicker Improvements */
+.ant-picker {
+  border-radius: var(--border-radius-md);
+}
+
 /* Responsive Styles */
-@media (max-width: 992px) {
+@media (max-width: 1200px) {
   .dashboard-container {
-    padding: 20px;
+    padding: 0;
   }
-  
+}
+
+@media (max-width: 992px) {
   .metric-content {
-    flex-direction: column;
-    text-align: center;
+    flex-direction: row;
+    text-align: left;
   }
   
   .metric-icon-wrapper {
-    margin-right: 0;
-    margin-bottom: 12px;
+    margin-right: 16px;
+    margin-bottom: 0;
   }
 }
 
 @media (max-width: 768px) {
-  .dashboard-container {
-    padding: 16px;
-  }
-  
   .footer-section {
     min-width: 50%;
   }
   
   .metric-card {
     margin-bottom: 16px;
+  }
+  
+  .main-content-wrapper {
+    padding: 16px !important;
   }
 }
 
@@ -391,5 +577,15 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+  }
+  
+  .metric-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .metric-icon-wrapper {
+    margin-right: 0;
+    margin-bottom: 12px;
   }
 }

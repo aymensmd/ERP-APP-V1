@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Drawer, Typography, Row, Col, Statistic, Divider, ConfigProvider } from 'antd';
+import { Button, Card, Drawer, Typography, Row, Col, Statistic, Divider, ConfigProvider, Spin } from 'antd';
 import { PlusOutlined, UserOutlined } from '@ant-design/icons';
 import Layout from 'antd/es/layout/layout';
-import Form from '../Form/index';
+import EmployeeForm from '../components/EmployeeForm';
 import UserTable from './UserTable';
 import axios from '../axios';
 import dayjs from 'dayjs';
@@ -65,7 +65,15 @@ const EmployeViewComponent = () => {
 
   // Department breakdown
   const departmentCounts = employees.reduce((acc, emp) => {
-    acc[emp.department] = (acc[emp.department] || 0) + 1;
+    // Handle both object and string/ID formats
+    const deptName = typeof emp.department === 'object' && emp.department?.name 
+      ? emp.department.name 
+      : typeof emp.department === 'string' 
+      ? emp.department 
+      : emp.department_id 
+      ? `Department ${emp.department_id}`
+      : 'Unassigned';
+    acc[deptName] = (acc[deptName] || 0) + 1;
     return acc;
   }, {});
   const departmentList = Object.entries(departmentCounts).map(([dept, count]) => ({ dept, count }));
@@ -73,8 +81,20 @@ const EmployeViewComponent = () => {
   // Quick filter
   const handleDepartmentFilter = dept => {
     setDepartmentFilter(dept);
-    if (dept === '') setFilteredEmployees(employees);
-    else setFilteredEmployees(employees.filter(e => e.department === dept));
+    if (dept === '') {
+      setFilteredEmployees(employees);
+    } else {
+      setFilteredEmployees(employees.filter(e => {
+        const empDeptName = typeof e.department === 'object' && e.department?.name 
+          ? e.department.name 
+          : typeof e.department === 'string' 
+          ? e.department 
+          : e.department_id 
+          ? `Department ${e.department_id}`
+          : 'Unassigned';
+        return empDeptName === dept;
+      }));
+    }
   };
 
   // Recent hires (last 30 days)
@@ -110,90 +130,99 @@ const EmployeViewComponent = () => {
       }}
     >
       <Content className="content">
-        <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-          <Card style={{ 
-            margin: 0, 
-            padding: '32px', 
-            background: colors.cardBg,
-            borderRadius: '16px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-            border: 'none'
-          }} loading={loading}>
-          <Title level={3} style={{ marginBottom: 0, color: colors.textPrimary }}>Gestion des employés</Title>
-          <Text type="secondary" style={{ fontSize: 16, color: colors.textSecondary }}>
-            Ajoutez, modifiez, filtrez, exportez et consultez les informations des employés.
-          </Text>
-          <Divider />
-          <Row gutter={[32, 32]}>
-            <Col xs={24} md={16}>
+        <Spin spinning={loading}>
+          <div style={{ padding: 0, maxWidth: '1600px', margin: '0 auto', width: '100%' }}>
+            <div style={{ 
+              margin: 0, 
+              padding: 0, 
+              background: 'transparent',
+              borderRadius: '8px',
+              border: 'none'
+            }}>
+              <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${colors.border}` }}>
+                <Title level={3} style={{ marginBottom: 4, color: colors.textPrimary, fontSize: 20 }}>Employee Management</Title>
+                <Text type="secondary" style={{ fontSize: 13, color: colors.textSecondary }}>
+                  Add, edit, filter, export and manage employee information.
+                </Text>
+              </div>
+              <Row gutter={[16, 16]}>
+            <Col xs={24} lg={16}>
               <div style={{ 
                 background: colors.statsBg, 
-                borderRadius: '16px', 
-                padding: '32px', 
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                borderRadius: '8px', 
+                padding: '16px', 
+                boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
                 border: `1px solid ${colors.border}`
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ flex: 1 }} />
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <Button
-                      icon={<PlusOutlined />} 
-                      type="primary" 
-                      size="large"
-                      style={{ fontWeight: 600 }}
-                      onClick={() => setDrawerVisible(true)}
-                    >
-                      Ajouter
-                    </Button>
-                    <Button
-                      size="large"
-                      style={{ fontWeight: 600 }}
-                      onClick={() => window.dispatchEvent(new CustomEvent('export-employees-csv', { detail: filteredEmployees }))}
-                    >
-                      Exporter CSV
-                    </Button>
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+                  <Button
+                    icon={<PlusOutlined />} 
+                    type="primary" 
+                    size="middle"
+                    style={{ fontWeight: 500 }}
+                    onClick={() => setDrawerVisible(true)}
+                  >
+                    Add Employee
+                  </Button>
+                  <Button
+                    size="middle"
+                    style={{ fontWeight: 500 }}
+                    onClick={() => window.dispatchEvent(new CustomEvent('export-employees-csv', { detail: filteredEmployees }))}
+                  >
+                    Export CSV
+                  </Button>
                 </div>
               
                 <UserTable employees={filteredEmployees} />
               </div>
             </Col>
-            <Col xs={24} md={8}>
-              <Card variant="outlined" style={{ 
-                background: colors.infoBg, 
-                borderRadius: '16px', 
-                marginBottom: 24,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-                border: `1px solid ${colors.border}`,
-                transition: 'all 0.2s ease'
-              }}>
+            <Col xs={24} lg={8}>
+              <Card 
+                variant="outlined" 
+                bodyStyle={{ padding: '16px' }}
+                style={{ 
+                  background: colors.infoBg, 
+                  borderRadius: '8px', 
+                  marginBottom: 12,
+                  boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                  border: `1px solid ${colors.border}`,
+                  transition: 'all 0.2s ease'
+                }}
+              >
                 <Statistic
-                  title="Nombre total d'employés"
+                  title={<span style={{ fontSize: 13 }}>Total Employees</span>}
                   value={employees.length}
-                  prefix={<UserOutlined />}
-                  valueStyle={{ color: colors.textPrimary }}
+                  prefix={<UserOutlined style={{ fontSize: 18 }} />}
+                  valueStyle={{ color: colors.textPrimary, fontSize: 24, fontWeight: 600 }}
                 />
               </Card>
-              <Card variant="outlined" style={{ 
-                background: colors.infoBg, 
-                borderRadius: '16px', 
-                marginBottom: 24,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-                border: `1px solid ${colors.border}`,
-                transition: 'all 0.2s ease'
-              }}>
-                <Title level={5} style={{ marginBottom: 8, color: colors.textPrimary }}>Répartition par département</Title>
+              <Card 
+                variant="outlined" 
+                bodyStyle={{ padding: '16px' }}
+                style={{ 
+                  background: colors.infoBg, 
+                  borderRadius: '8px', 
+                  marginBottom: 12,
+                  boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                  border: `1px solid ${colors.border}`,
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Title level={5} style={{ marginBottom: 12, color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>Department Breakdown</Title>
                 {departmentList.length === 0 ? (
-                  <Text type="secondary">Aucun département</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>No departments</Text>
                 ) : (
-                  <ul style={{ paddingLeft: 18, margin: 0 }}>
+                  <ul style={{ paddingLeft: 18, margin: 0, listStyle: 'disc' }}>
                     {departmentList.map(d => (
                       <li 
                         key={d.dept} 
                         style={{ 
                           fontWeight: departmentFilter === d.dept ? 600 : 400, 
                           color: departmentFilter === d.dept ? colors.primary : colors.textPrimary,
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          marginBottom: 6,
+                          fontSize: 13,
+                          lineHeight: '20px'
                         }}
                         onClick={() => handleDepartmentFilter(d.dept)}
                       >
@@ -203,52 +232,85 @@ const EmployeViewComponent = () => {
                   </ul>
                 )}
               </Card>
-              <Card variant="outlined" style={{ 
-                background: colors.infoBg, 
-                borderRadius: '16px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-                border: `1px solid ${colors.border}`
-              }}>
-                <Title level={5} style={{ color: colors.textPrimary }}>Nouvelles embauches</Title>
+              <Card 
+                variant="outlined" 
+                bodyStyle={{ padding: '16px' }}
+                style={{ 
+                  background: colors.infoBg, 
+                  borderRadius: '8px',
+                  boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                  border: `1px solid ${colors.border}`
+                }}
+              >
+                <Title level={5} style={{ marginBottom: 12, color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>Recent Hires</Title>
                 {recentHires.length === 0 ? 
-                  <Text type="secondary">Aucune embauche récente</Text> : 
-                  recentHires.map(e => <div key={e.id} style={{ color: colors.textPrimary }}>{e.name} ({typeof e.department === 'string' ? e.department : (e.department?.name || 'N/A')}) - {dayjs(e.created_at).format('DD/MM/YYYY')}</div>)
+                  <Text type="secondary" style={{ fontSize: 12 }}>No recent hires</Text> : 
+                  <div style={{ maxHeight: 120, overflowY: 'auto' }}>
+                    {recentHires.slice(0, 5).map(e => (
+                      <div key={e.id} style={{ color: colors.textPrimary, marginBottom: 8, fontSize: 12, lineHeight: '18px' }}>
+                        <div style={{ fontWeight: 500 }}>{e.name}</div>
+                        <div style={{ color: colors.textSecondary, fontSize: 11 }}>
+                          {typeof e.department === 'object' && e.department?.name 
+                            ? e.department.name 
+                            : typeof e.department === 'string' 
+                            ? e.department 
+                            : 'N/A'} - {dayjs(e.created_at).format('MMM DD, YYYY')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 }
                 <Divider style={{ margin: '12px 0' }} />
-                <Title level={5} style={{ color: colors.textPrimary }}>Anniversaires & Entrées à venir</Title>
+                <Title level={5} style={{ marginBottom: 12, color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>Upcoming Events</Title>
                 {upcomingBirthdays.length === 0 && upcomingAnniversaries.length === 0 ? 
-                  <Text type="secondary">Aucun événement à venir</Text> : 
-                  <>
-                    {upcomingBirthdays.map(e => <div key={e.id + '-bday'} style={{ color: colors.textPrimary }}>🎂 {e.name} - {dayjs(e.birthday).format('DD/MM')}</div>)}
-                    {upcomingAnniversaries.map(e => <div key={e.id + '-anniv'} style={{ color: colors.textPrimary }}>🎉 {e.name} - {dayjs(e.created_at).format('DD/MM')}</div>)}
-                  </>
+                  <Text type="secondary" style={{ fontSize: 12 }}>No upcoming events</Text> : 
+                  <div style={{ maxHeight: 120, overflowY: 'auto' }}>
+                    {upcomingBirthdays.slice(0, 3).map(e => (
+                      <div key={e.id + '-bday'} style={{ color: colors.textPrimary, marginBottom: 6, fontSize: 12, lineHeight: '18px' }}>
+                        🎂 {e.name} - {dayjs(e.birthday).format('MMM DD')}
+                      </div>
+                    ))}
+                    {upcomingAnniversaries.slice(0, 3).map(e => (
+                      <div key={e.id + '-anniv'} style={{ color: colors.textPrimary, marginBottom: 6, fontSize: 12, lineHeight: '18px' }}>
+                        🎉 {e.name} - {dayjs(e.created_at).format('MMM DD')}
+                      </div>
+                    ))}
+                  </div>
                 }
               </Card>
             </Col>
           </Row>
-        </Card>
+            </div>
+          </div>
+        </Spin>
         <Drawer
-          title="Ajouter un employé"
+          title="Add New Employee"
           placement="right"
           onClose={() => setDrawerVisible(false)}
           open={drawerVisible}
-          width={Math.min(1000, window.innerWidth * 0.9)}
+          width={Math.min(900, window.innerWidth * 0.85)}
           styles={{
             body: {
-              padding: '32px',
+              padding: '20px',
               background: colors.cardBg,
               color: colors.textPrimary
             },
             header: {
-              padding: '24px 32px',
+              padding: '16px 20px',
               background: colors.cardBg,
               borderBottom: `1px solid ${colors.border}`
             }
           }}
         >
-          <Form />
+          <EmployeeForm 
+            mode="create"
+            onSuccess={() => {
+              setDrawerVisible(false);
+              window.location.reload(); // Refresh the page to show new employee
+            }}
+            onCancel={() => setDrawerVisible(false)}
+          />
         </Drawer>
-        </div>
       </Content>
     </ConfigProvider>
   );

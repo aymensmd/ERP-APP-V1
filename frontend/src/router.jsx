@@ -68,129 +68,219 @@ const router = createBrowserRouter([
       },
       {
         path: '/dashboard',
-        element: <Dashboard />
+        element: (
+          <PrivateRoute requiredPermissions={['dashboard.view']}>
+            <Dashboard />
+          </PrivateRoute>
+        )
       },
       {
         path: '/achievements',
         element: (
-          <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
-            <Achievements />
-          </Suspense>
+          <PrivateRoute requiredPermissions={['dashboard.view']}>
+            <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
+              <Achievements />
+            </Suspense>
+          </PrivateRoute>
         )
       },
       {
         path: '/tasks',
         element: (
-          <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
-            <TaskManagement />
-          </Suspense>
+          <PrivateRoute requiredPermissions={['kanban.view']}>
+            <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
+              <TaskManagement />
+            </Suspense>
+          </PrivateRoute>
         )
       },
       {
         path: '/performance',
         element: (
-          <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
-            <Performance />
-          </Suspense>
+          <PrivateRoute requiredPermissions={['analytics.view']}>
+            <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
+              <Performance />
+            </Suspense>
+          </PrivateRoute>
         )
       },
       {
         path: '/profile',
-        element: <ProfilePage />
+        element: <ProfilePage /> // Profile accessible to all authenticated users
       },
       {
         path: '/settings',
-        element: <SettingsPage />
+        element: (
+          <PrivateRoute requiredPermissions={['settings.view']}>
+            <SettingsPage />
+          </PrivateRoute>
+        )
       },
       {
         path: '/dash/chat',
-        element: <MessageComponent />
+        element: <MessageComponent /> // Chat accessible to all authenticated users
       },
       {
         path: '/demo-request',
-        element: <DemoRequest />
+        element: <DemoRequest /> // Demo request accessible to all
       },
       {
         path: '/projects',
-        element: <Projects />
+        element: (
+          <PrivateRoute requiredPermissions={['projects.view']}>
+            <Projects />
+          </PrivateRoute>
+        )
       },
       {
         path: '/calendar',
-        element: <Calendar />
+        element: (
+          <PrivateRoute requiredPermissions={['events.view']}>
+            <Calendar />
+          </PrivateRoute>
+        )
       },
       {
         path: '/notifications',
-        element: <Notifications />
+        element: <Notifications /> // Notifications accessible to all authenticated users
       },
       {
         path: '/reports',
-        element: <Reports />
+        element: (
+          <PrivateRoute requiredPermissions={['reports.view']}>
+            <Reports />
+          </PrivateRoute>
+        )
       },
       {
         path: '/analytics',
-        element: <Analytics />
+        element: (
+          <PrivateRoute requiredPermissions={['analytics.view']}>
+            <Analytics />
+          </PrivateRoute>
+        )
       },
       {
         path: '/help',
-        element: <HelpCenter />
+        element: <HelpCenter /> // Help accessible to all authenticated users
       },
       {
         path: '/knowledge',
-        element: <KnowledgeBase />
+        element: <KnowledgeBase /> // Knowledge base accessible to all authenticated users
       },
       {
         path: '/timetracking',
-        element: <TimeTracking />
+        element: (
+          <PrivateRoute requiredPermissions={['time-tracking.view']}>
+            <TimeTracking />
+          </PrivateRoute>
+        )
       },
       {
         path: '/surveys',
-        element: <Surveys />
+        element: (
+          <PrivateRoute requiredPermissions={['dashboard.view']}>
+            <Surveys />
+          </PrivateRoute>
+        )
       },
       {
         path: '/rewards',
-        element: <Rewards />
+        element: (
+          <PrivateRoute requiredPermissions={['dashboard.view']}>
+            <Rewards />
+          </PrivateRoute>
+        )
       },
       {
         path: '/workflow-builder',
-        element: <WorkflowBuilder /> // New WorkflowBuilder route
+        element: (
+          <PrivateRoute requiredPermissions={['settings.view']}>
+            <WorkflowBuilder />
+          </PrivateRoute>
+        )
       },
+      // Protected routes with permission checks
       {
         path: '/activity-logs',
-        element: <ActivityLogs /> // Activity Logs route
+        element: (
+          <PrivateRoute requiredPermissions={['audit-logs.view']}>
+            <ActivityLogs />
+          </PrivateRoute>
+        )
       },
       {
         path: '/leads',
-        element: <Leads /> // Leads management route
+        element: (
+          <PrivateRoute requiredPermissions={['leads.view']}>
+            <Leads />
+          </PrivateRoute>
+        )
       },
       {
         path: '/customers',
-        element: <Customers /> // Customers management route
+        element: (
+          <PrivateRoute requiredPermissions={['customers.view']}>
+            <Customers />
+          </PrivateRoute>
+        )
       },
       {
         path: '/invoices',
-        element: <Invoices /> // Invoices management route
-      },
-      {
-        path: '/onboarding',
-        element: <Onboarding /> // Employee Onboarding route
-      },
-      {
-        path: '/shifts',
-        element: <Shifts /> // Shift Management route
+        element: (
+          <PrivateRoute requiredPermissions={['invoices.view']}>
+            <Invoices />
+          </PrivateRoute>
+        )
       },
       {
         path: '/kanban',
-        element: <KanbanBoards /> // Kanban boards route
+        element: (
+          <PrivateRoute requiredPermissions={['kanban.view']}>
+            <KanbanBoards />
+          </PrivateRoute>
+        )
       },
       {
         path: '/organizational-chart',
-        element: <OrganizationalChartPage /> // Organizational chart route
+        element: (
+          <PrivateRoute requiredPermissions={['org-chart.view']}>
+            <OrganizationalChartPage />
+          </PrivateRoute>
+        )
       },
-      // HR Management routes - only visible to admin
+      {
+        path: '/onboarding',
+        element: (
+          <PrivateRoute requiredPermissions={['onboarding.view']}>
+            <Onboarding />
+          </PrivateRoute>
+        )
+      },
+      {
+        path: '/shifts',
+        element: (
+          <PrivateRoute requiredPermissions={['shifts.view']}>
+            <Shifts />
+          </PrivateRoute>
+        )
+      },
+      {
+        path: '/leaves',
+        element: (
+          <PrivateRoute requiredPermissions={['vacations.view']}>
+            <UserSettingView />
+          </PrivateRoute>
+        )
+      },
+      // HR Management routes - Admin and Manager only
       {
         path: '/users_setting',
         element: (
-          <PrivateRoute allowedRoles={['admin']}>
+          <PrivateRoute 
+            allowedRoles={['admin', 'manager']}
+            requiredPermissions={['employees.view']}
+          >
             <UserSettingView />
           </PrivateRoute>
         )

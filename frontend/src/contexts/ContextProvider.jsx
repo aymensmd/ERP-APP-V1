@@ -7,13 +7,40 @@ const StateContext = createContext({
   setToken: () => {},
   logout: () => {}, // Add logout function to context
   theme: 'light',
-  setTheme: () => {}
+  setTheme: () => {},
+  refreshPermissions: () => {}, // Refresh user permissions
 });
 
 export const ContextProvider = ({ children }) => {
   const [user, _setUser] = useState(() => {
     const storedUser = localStorage.getItem("USER");
-    return storedUser ? JSON.parse(storedUser) : null;
+    if (!storedUser) return null;
+    
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      // Ensure permissions is always an array
+      if (parsedUser && parsedUser.permissions && !Array.isArray(parsedUser.permissions)) {
+        if (typeof parsedUser.permissions === 'string') {
+          try {
+            parsedUser.permissions = JSON.parse(parsedUser.permissions);
+          } catch (e) {
+            parsedUser.permissions = [];
+          }
+        } else if (typeof parsedUser.permissions === 'object') {
+          parsedUser.permissions = Object.values(parsedUser.permissions);
+        } else {
+          parsedUser.permissions = [];
+        }
+        // Save the normalized user back to localStorage
+        localStorage.setItem("USER", JSON.stringify(parsedUser));
+      } else if (parsedUser && !parsedUser.permissions) {
+        parsedUser.permissions = [];
+      }
+      return parsedUser;
+    } catch (e) {
+      console.error('Error parsing stored user:', e);
+      return null;
+    }
   });
   
   const [token, _setToken] = useState(() => localStorage.getItem('ACCESS_TOKEN'));
@@ -33,16 +60,35 @@ export const ContextProvider = ({ children }) => {
 
   const setUser = (user) => {
     if (user) {
-      localStorage.setItem("USER", JSON.stringify(user));
-      // Also set USER_DATA if it's part of your user object
-      if (user.data) {
-        localStorage.setItem("USER_DATA", JSON.stringify(user.data));
+      // Normalize permissions to ensure it's always an array
+      const normalizedUser = { ...user };
+      if (!normalizedUser.permissions) {
+        normalizedUser.permissions = [];
+      } else if (!Array.isArray(normalizedUser.permissions)) {
+        if (typeof normalizedUser.permissions === 'string') {
+          try {
+            normalizedUser.permissions = JSON.parse(normalizedUser.permissions);
+          } catch (e) {
+            normalizedUser.permissions = [];
+          }
+        } else if (typeof normalizedUser.permissions === 'object') {
+          normalizedUser.permissions = Object.values(normalizedUser.permissions);
+        } else {
+          normalizedUser.permissions = [];
+        }
       }
+      
+      localStorage.setItem("USER", JSON.stringify(normalizedUser));
+      // Also set USER_DATA if it's part of your user object
+      if (normalizedUser.data) {
+        localStorage.setItem("USER_DATA", JSON.stringify(normalizedUser.data));
+      }
+      _setUser(normalizedUser);
     } else {
       localStorage.removeItem("USER");
       localStorage.removeItem("USER_DATA");
+      _setUser(null);
     }
-    _setUser(user);
   };
 
   const setTheme = (theme) => {

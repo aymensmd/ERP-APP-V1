@@ -48,13 +48,30 @@ class AuthController extends Controller {
             // Load relationships if they exist
             $user->load(['department', 'role']);
 
+            // Get the first active company for the user to set context
+            $companyId = $request->header('X-Company-ID');
+            if (!$companyId) {
+                $firstCompany = $user->companies()->wherePivot('status', 'active')->first();
+                if ($firstCompany) {
+                    $companyId = $firstCompany->id;
+                    // Set company context for the request
+                    $request->attributes->set('current_company_id', $companyId);
+                }
+            }
+
             $token = $user->createToken('auth_token')->plainTextToken;
 
             $cookie = cookie('token', $token, 60 * 24); // 1 day
 
+            // Create UserResource with company context
+            $userResource = new UserResource($user);
+            if ($companyId) {
+                $request->attributes->set('current_company_id', $companyId);
+            }
+
             return response()->json([
                 'token' => $token,
-                'user' => new UserResource($user),
+                'user' => $userResource->toArray($request),
             ])->withCookie($cookie);
         } catch (\Exception $e) {
             \Log::error('Login error: ' . $e->getMessage());
@@ -80,7 +97,17 @@ class AuthController extends Controller {
     public function user(Request $request) {
         $user = $request->user();
         $user->load(['department', 'role']);
-        return new UserResource($user);
+        
+        // Ensure company context is set for permissions
+        $companyId = $request->header('X-Company-ID') ?? 
+                     $request->attributes->get('current_company_id') ?? 
+                     session('current_company_id');
+        if ($companyId) {
+            $request->attributes->set('current_company_id', $companyId);
+        }
+        
+        $userResource = new UserResource($user);
+        return response()->json($userResource->toArray($request));
     }
 
     // store/create employee with full profile (used by admin/user management)

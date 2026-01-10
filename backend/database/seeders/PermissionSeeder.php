@@ -87,6 +87,48 @@ class PermissionSeeder extends Seeder
             // Settings
             ['name' => 'settings.view', 'resource' => 'settings', 'action' => 'view', 'description' => 'View settings', 'group' => 'Admin', 'sort_order' => 150],
             ['name' => 'settings.update', 'resource' => 'settings', 'action' => 'update', 'description' => 'Update settings', 'group' => 'Admin', 'sort_order' => 151],
+
+            // CRM - Leads Management
+            ['name' => 'leads.view', 'resource' => 'leads', 'action' => 'view', 'description' => 'View leads', 'group' => 'CRM', 'sort_order' => 160],
+            ['name' => 'leads.create', 'resource' => 'leads', 'action' => 'create', 'description' => 'Create leads', 'group' => 'CRM', 'sort_order' => 161],
+            ['name' => 'leads.update', 'resource' => 'leads', 'action' => 'update', 'description' => 'Update leads', 'group' => 'CRM', 'sort_order' => 162],
+            ['name' => 'leads.delete', 'resource' => 'leads', 'action' => 'delete', 'description' => 'Delete leads', 'group' => 'CRM', 'sort_order' => 163],
+            ['name' => 'leads.convert', 'resource' => 'leads', 'action' => 'convert', 'description' => 'Convert leads to customers', 'group' => 'CRM', 'sort_order' => 164],
+
+            // CRM - Customers Management
+            ['name' => 'customers.view', 'resource' => 'customers', 'action' => 'view', 'description' => 'View customers', 'group' => 'CRM', 'sort_order' => 170],
+            ['name' => 'customers.create', 'resource' => 'customers', 'action' => 'create', 'description' => 'Create customers', 'group' => 'CRM', 'sort_order' => 171],
+            ['name' => 'customers.update', 'resource' => 'customers', 'action' => 'update', 'description' => 'Update customers', 'group' => 'CRM', 'sort_order' => 172],
+            ['name' => 'customers.delete', 'resource' => 'customers', 'action' => 'delete', 'description' => 'Delete customers', 'group' => 'CRM', 'sort_order' => 173],
+
+            // CRM - Invoices Management
+            ['name' => 'invoices.view', 'resource' => 'invoices', 'action' => 'view', 'description' => 'View invoices', 'group' => 'CRM', 'sort_order' => 180],
+            ['name' => 'invoices.create', 'resource' => 'invoices', 'action' => 'create', 'description' => 'Create invoices', 'group' => 'CRM', 'sort_order' => 181],
+            ['name' => 'invoices.update', 'resource' => 'invoices', 'action' => 'update', 'description' => 'Update invoices', 'group' => 'CRM', 'sort_order' => 182],
+            ['name' => 'invoices.delete', 'resource' => 'invoices', 'action' => 'delete', 'description' => 'Delete invoices', 'group' => 'CRM', 'sort_order' => 183],
+            ['name' => 'invoices.send', 'resource' => 'invoices', 'action' => 'send', 'description' => 'Send invoices', 'group' => 'CRM', 'sort_order' => 184],
+
+            // Kanban Boards & Tasks
+            ['name' => 'kanban.view', 'resource' => 'kanban', 'action' => 'view', 'description' => 'View kanban boards', 'group' => 'Projects', 'sort_order' => 190],
+            ['name' => 'kanban.create', 'resource' => 'kanban', 'action' => 'create', 'description' => 'Create kanban boards', 'group' => 'Projects', 'sort_order' => 191],
+            ['name' => 'kanban.update', 'resource' => 'kanban', 'action' => 'update', 'description' => 'Update kanban boards', 'group' => 'Projects', 'sort_order' => 192],
+            ['name' => 'kanban.delete', 'resource' => 'kanban', 'action' => 'delete', 'description' => 'Delete kanban boards', 'group' => 'Projects', 'sort_order' => 193],
+
+            // Employee Onboarding
+            ['name' => 'onboarding.view', 'resource' => 'onboarding', 'action' => 'view', 'description' => 'View onboarding checklists', 'group' => 'HRM', 'sort_order' => 200],
+            ['name' => 'onboarding.create', 'resource' => 'onboarding', 'action' => 'create', 'description' => 'Create onboarding checklists', 'group' => 'HRM', 'sort_order' => 201],
+            ['name' => 'onboarding.update', 'resource' => 'onboarding', 'action' => 'update', 'description' => 'Update onboarding checklists', 'group' => 'HRM', 'sort_order' => 202],
+            ['name' => 'onboarding.delete', 'resource' => 'onboarding', 'action' => 'delete', 'description' => 'Delete onboarding checklists', 'group' => 'HRM', 'sort_order' => 203],
+
+            // Shift Management
+            ['name' => 'shifts.view', 'resource' => 'shifts', 'action' => 'view', 'description' => 'View shifts', 'group' => 'HRM', 'sort_order' => 210],
+            ['name' => 'shifts.create', 'resource' => 'shifts', 'action' => 'create', 'description' => 'Create shifts', 'group' => 'HRM', 'sort_order' => 211],
+            ['name' => 'shifts.update', 'resource' => 'shifts', 'action' => 'update', 'description' => 'Update shifts', 'group' => 'HRM', 'sort_order' => 212],
+            ['name' => 'shifts.delete', 'resource' => 'shifts', 'action' => 'delete', 'description' => 'Delete shifts', 'group' => 'HRM', 'sort_order' => 213],
+
+            // Organizational Chart
+            ['name' => 'org-chart.view', 'resource' => 'org-chart', 'action' => 'view', 'description' => 'View organizational chart', 'group' => 'HRM', 'sort_order' => 220],
+            ['name' => 'org-chart.export', 'resource' => 'org-chart', 'action' => 'export', 'description' => 'Export organizational chart', 'group' => 'HRM', 'sort_order' => 221],
         ];
 
         foreach ($permissions as $permission) {

@@ -64,12 +64,12 @@ function UserSettingView({ onSelectMenuItem }) {
     {
       key: '1',
       icon: <TeamOutlined style={{ fontSize: 18 }} />,
-      label: 'Gestion des comptes',
+      label: 'Employee Management',
     },
     {
       key: '2',
       icon: <CalendarOutlined style={{ fontSize: 18 }} />,
-      label: 'Gestion des absences',
+      label: 'Leave Management',
     },
     {
       key: '3',
@@ -100,11 +100,11 @@ function UserSettingView({ onSelectMenuItem }) {
             display: 'flex',
             alignItems: 'center', 
             background: colors.headerBg, 
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-            borderRadius: '0 0 12px 12px',
-            marginBottom: 16,
-            padding: '0 24px',
-            height: 64,
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.08)',
+            borderRadius: '0 0 8px 8px',
+            marginBottom: 12,
+            padding: '0 16px',
+            height: 56,
             position: 'sticky',
             top: 0,
             zIndex: 100
@@ -121,9 +121,9 @@ function UserSettingView({ onSelectMenuItem }) {
               minWidth: 0, 
               background: 'transparent', 
               fontWeight: 600, 
-              fontSize: 16, 
+              fontSize: 15, 
               border: 'none',
-              lineHeight: '64px'
+              lineHeight: '56px'
             }}
             items={menuItems.map(item => ({
               ...item,
@@ -135,20 +135,20 @@ function UserSettingView({ onSelectMenuItem }) {
         {/* Content Area */}
         <Content
           style={{
-            padding: '32px',
+            padding: '16px',
             margin: 0,
-            minHeight: 'calc(100vh - 64px)',
+            minHeight: 'calc(100vh - 68px)',
             background: colors.bgContainer,
           }}
         >
           <div style={{
             background: colors.bgContainer,
-            borderRadius: '16px',
-            padding: '32px',
-            minHeight: 'calc(100vh - 180px)',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            borderRadius: '8px',
+            padding: '16px',
+            minHeight: 'calc(100vh - 100px)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
             border: `1px solid ${colors.border}`,
-            maxWidth: '1400px',
+            maxWidth: '1600px',
             margin: '0 auto',
             width: '100%'
           }}>

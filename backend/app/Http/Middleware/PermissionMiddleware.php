@@ -23,14 +23,16 @@ class PermissionMiddleware
         }
 
         $user = Auth::user();
-        $company = $request->attributes->get('current_company');
+        $companyId = $request->attributes->get('current_company_id') ?? 
+                     session('current_company_id') ?? 
+                     ($request->header('X-Company-ID') ? (int)$request->header('X-Company-ID') : null);
 
-        if (!$company) {
+        if (!$companyId) {
             return response()->json(['error' => 'Company context required'], 400);
         }
 
         // Check if user has permission in this company
-        if (!$user->hasPermissionInCompany($permission, $company->id)) {
+        if (!$user->hasPermissionInCompany($permission, $companyId)) {
             return response()->json([
                 'error' => 'Unauthorized. You do not have permission to perform this action.',
                 'required_permission' => $permission

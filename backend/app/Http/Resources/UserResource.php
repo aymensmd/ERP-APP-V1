@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 
 class UserResource extends JsonResource
 {
@@ -14,6 +15,40 @@ class UserResource extends JsonResource
      * @return array
      */
     public function toArray($request) {
+        // Get company context for permissions
+        $companyId = $request->attributes->get('current_company_id') ?? 
+                     session('current_company_id') ?? 
+                     ($request->header('X-Company-ID') ? (int)$request->header('X-Company-ID') : null);
+        
+        // Get user's permissions in the current company
+        $permissions = [];
+        if ($companyId) {
+            $companyUser = DB::table('company_user')
+                ->where('user_id', $this->id)
+                ->where('company_id', $companyId)
+                ->where('status', 'active')
+                ->first();
+            
+            if ($companyUser) {
+                // Admin has all permissions
+                if ($companyUser->role_id === 1) {
+                    $permissions = \App\Models\Permission::all()->pluck('name')->toArray();
+                } else {
+                    // Get custom permissions override
+                    $customPermissions = json_decode($companyUser->permissions ?? '[]', true);
+                    
+                    // Get role permissions
+                    $rolePermissions = DB::table('role_permission')
+                        ->join('permissions', 'role_permission.permission_id', '=', 'permissions.id')
+                        ->where('role_permission.role_id', $companyUser->role_id)
+                        ->pluck('permissions.name')
+                        ->toArray();
+                    
+                    $permissions = array_unique(array_merge($rolePermissions, $customPermissions));
+                }
+            }
+        }
+        
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -32,6 +67,7 @@ class UserResource extends JsonResource
             'role' => $this->whenLoaded('role', function () {
                 return new RoleResource($this->role);
             }),
+            'permissions' => $permissions,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Input, Button, message, Drawer, Form, Select, Space, Popconfirm, Typography, ConfigProvider } from 'antd';
-import { SearchOutlined, PlusOutlined, FilterOutlined } from '@ant-design/icons';
+import { Card, Table, Input, Button, message, Drawer, Select, Space, Popconfirm, Typography, ConfigProvider, Tag } from 'antd';
+import { SearchOutlined, PlusOutlined, FilterOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import EmployeeForm from '../components/EmployeeForm';
 import axios from '../axios';
 import { useRealTimeData } from '../hooks/useRealTimeData';
 import { useStateContext } from '../contexts/ContextProvider';
 
 const { Option } = Select;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const UserTable = () => {
   const { theme } = useStateContext();
@@ -16,7 +17,6 @@ const UserTable = () => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [departmentOptions, setDepartmentOptions] = useState([]);
-  const [form] = Form.useForm();
 
   const { data: users, loading, error, refresh } = useRealTimeData('/employees');
 
@@ -61,29 +61,14 @@ const UserTable = () => {
     fetchDepartments();
   }, []);
 
-  const handleUpdateFormSubmit = async (values) => {
+  const handleDelete = async (userId) => {
     try {
-      const token = localStorage.getItem('ACCESS_TOKEN');
-      const updatedData = {
-        name: values.name,
-        email: values.email,
-        department_id: values.department,
-        role_id: values.role,
-      };
-
-      await axios.put(`/employees/${selectedUser.id}`, updatedData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Accept': 'application/json',
-        },
-      });
-
-      message.success('User updated successfully');
-      setDrawerVisible(false);
+      await axios.delete(`/employees/${userId}`);
+      message.success('Employee deleted successfully');
       refresh();
     } catch (error) {
-      message.error('Failed to update user');
-      console.error('Update error:', error);
+      message.error('Failed to delete employee');
+      console.error('Delete error:', error);
     }
   };
 
@@ -94,64 +79,117 @@ const UserTable = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                          user.email.toLowerCase().includes(searchText.toLowerCase());
-    const matchesDepartment = department ? user.department_id === department : true;
+    const matchesSearch = user.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+                          user.email?.toLowerCase().includes(searchText.toLowerCase()) ||
+                          user.employee_id?.toLowerCase().includes(searchText.toLowerCase());
+    const matchesDepartment = department ? user.department_id === parseInt(department) : true;
     const matchesRole = roleFilter ? user.role?.name === roleFilter : true;
     return matchesSearch && matchesDepartment && matchesRole;
   });
 
   const columns = [
     {
+      title: 'Employee ID',
+      dataIndex: 'employee_id',
+      key: 'employee_id',
+      width: 110,
+      render: (text) => <span style={{ color: colors.textPrimary, fontFamily: 'monospace', fontSize: 12 }}>{text || 'N/A'}</span>,
+    },
+    {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text) => <span style={{ color: colors.textPrimary }}>{text}</span>,
+      width: 180,
+      render: (text, record) => (
+        <div>
+          <div style={{ color: colors.textPrimary, fontWeight: 500, fontSize: 13 }}>{text}</div>
+          <div style={{ color: colors.textSecondary, fontSize: 11 }}>{record.position || 'N/A'}</div>
+        </div>
+      ),
     },
     {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
-      render: (text) => <span style={{ color: colors.textPrimary }}>{text}</span>,
+      width: 200,
+      render: (text) => <span style={{ color: colors.textPrimary, fontSize: 12 }}>{text}</span>,
     },
     {
       title: 'Department',
-      dataIndex: 'department_id',
+      dataIndex: ['department', 'name'],
       key: 'department',
-      render: (departmentId) => {
-        const department = departmentOptions.find(dep => dep.id === departmentId);
-        return <span style={{ color: colors.textPrimary }}>{department ? department.name : 'N/A'}</span>;
+      width: 140,
+      render: (deptName, record) => {
+        // Handle both object and ID formats
+        const department = record.department?.name || 
+                          (record.department_id ? departmentOptions.find(d => d.id === record.department_id)?.name : null) ||
+                          deptName;
+        return <Tag color="blue" style={{ fontSize: 11 }}>{department || 'N/A'}</Tag>;
       },
     },
     {
       title: 'Role',
-      dataIndex: ['role', 'name'],
+      dataIndex: 'role',
       key: 'role',
-      render: (role) => <span style={{ color: colors.textPrimary }}>{role || 'N/A'}</span>,
+      width: 100,
+      render: (role) => {
+        const roleName = role?.name || role;
+        const roleColors = {
+          'Admin': 'red',
+          'Manager': 'orange',
+          'Employee': 'green',
+        };
+        return <Tag color={roleColors[roleName] || 'default'} style={{ fontSize: 11 }}>{roleName || 'N/A'}</Tag>;
+      },
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (status) => {
+        const statusColors = {
+          'active': 'green',
+          'inactive': 'default',
+          'on-leave': 'orange',
+          'terminated': 'red',
+        };
+        return <Tag color={statusColors[status] || 'default'} style={{ fontSize: 11 }}>{(status || 'active').toUpperCase()}</Tag>;
+      },
     },
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right',
+      width: 130,
       render: (_, record) => (
-        <Space size="middle">
-          <Button type="primary" onClick={() => {
-            setSelectedUser(record);
-            form.setFieldsValue({
-              ...record,
-              department: record.department_id,
-              role: record.role?.name,
-            });
-            setDrawerVisible(true);
-          }}>
+        <Space size={4}>
+          <Button 
+            type="primary" 
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => {
+              setSelectedUser(record);
+              setDrawerVisible(true);
+            }}
+          >
             Edit
           </Button>
           <Popconfirm
-            title="Are you sure you want to delete this user?"
+            title="Delete this employee?"
+            description="This will remove them from the company. Are you sure?"
             onConfirm={() => handleDelete(record.id)}
             okText="Yes"
             cancelText="No"
           >
-            <Button type="primary" danger>Delete</Button>
+            <Button 
+              type="primary" 
+              danger 
+              icon={<DeleteOutlined />}
+              size="small"
+            >
+              Delete
+            </Button>
           </Popconfirm>
         </Space>
       ),
@@ -169,121 +207,136 @@ const UserTable = () => {
         },
       }}
     >
-      <Card 
-        style={{ 
-          margin: '20px', 
-          borderRadius: '12px', 
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          background: colors.cardBg
-        }}
-      >
-        <Title level={3} style={{ marginBottom: '20px', textAlign: 'center', color: colors.textPrimary }}>
-          User Management
-        </Title>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', gap: 8 }}>
+      <div style={{ 
+        margin: 0, 
+        borderRadius: '8px', 
+        background: 'transparent',
+        border: 'none'
+      }}>
+        <div style={{ marginBottom: 16 }}>
+          <Title level={4} style={{ marginBottom: 4, color: colors.textPrimary, fontSize: 16, fontWeight: 600 }}>
+            Employees List
+          </Title>
+          <Text type="secondary" style={{ color: colors.textSecondary, fontSize: 12 }}>
+            Manage and view all employees in your organization
+          </Text>
+        </div>
+        
+        <div style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap',
+          gap: 8, 
+          marginBottom: 16,
+          alignItems: 'center'
+        }}>
           <Input
-            placeholder="Search by name or email"
+            placeholder="Search by name, email, or employee ID"
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
-            style={{ width: '300px' }}
+            style={{ flex: '1 1 250px', maxWidth: '350px' }}
             prefix={<SearchOutlined />}
             allowClear
+            size="middle"
           />
           <Select
-            placeholder="Filter by Role"
+            placeholder="Department"
+            value={department}
+            onChange={value => setDepartment(value)}
+            style={{ width: '160px' }}
+            allowClear
+            size="middle"
+          >
+            {departmentOptions.map(dept => (
+              <Option key={dept.id} value={dept.id.toString()}>{dept.name}</Option>
+            ))}
+          </Select>
+          <Select
+            placeholder="Role"
             value={roleFilter}
             onChange={value => setRoleFilter(value)}
-            style={{ width: '200px' }}
+            style={{ width: '140px' }}
             allowClear
+            size="middle"
           >
             <Option value="Admin">Admin</Option>
-            <Option value="Moderator">Moderator</Option>
+            <Option value="Manager">Manager</Option>
+            <Option value="Employee">Employee</Option>
           </Select>
-          <Button type="default" icon={<FilterOutlined />} onClick={handleResetFilters}>
-            Reset Filters
+          <Button 
+            type="default" 
+            icon={<FilterOutlined />} 
+            onClick={handleResetFilters}
+            size="middle"
+          >
+            Reset
           </Button>
-         
         </div>
-        <Table
-          columns={columns}
-          dataSource={filteredUsers}
-          loading={loading}
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
-          style={{ 
-            background: colors.cardBg, 
-            borderRadius: '12px', 
-            overflow: 'hidden',
-            border: `1px solid ${colors.border}`
-          }}
-        />
+        <div style={{
+          background: colors.cardBg,
+          borderRadius: '6px',
+          overflow: 'hidden',
+          border: `1px solid ${colors.border}`
+        }}>
+          <Table
+            columns={columns}
+            dataSource={filteredUsers}
+            loading={loading}
+            rowKey="id"
+            pagination={{ 
+              pageSize: 10,
+              showSizeChanger: true,
+              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} employees`,
+              pageSizeOptions: ['5', '10', '20', '50'],
+              size: 'small'
+            }}
+            scroll={{ x: 1200 }}
+            size="small"
+            style={{ 
+              background: 'transparent'
+            }}
+            locale={{
+              emptyText: 'No employees found'
+            }}
+          />
+        </div>
 
         <Drawer
-          title={selectedUser ? 'Edit User' : 'Add User'}
+          title={selectedUser ? 'Edit Employee' : 'Add Employee'}
           placement="right"
-          onClose={() => setDrawerVisible(false)}
+          onClose={() => {
+            setDrawerVisible(false);
+            setSelectedUser(null);
+          }}
           open={drawerVisible}
-          width={400}
+          width={Math.min(850, window.innerWidth * 0.85)}
           styles={{
             body: {
+              padding: '20px',
               background: colors.cardBg,
               color: colors.textPrimary
             },
             header: {
+              padding: '16px 20px',
               background: colors.cardBg,
               borderBottom: `1px solid ${colors.border}`
             }
           }}
         >
-          <Form
-            layout="vertical"
-            form={form}
-            onFinish={handleUpdateFormSubmit}
-            style={{ padding: '10px' }}
-          >
-            <Form.Item 
-              name="name" 
-              label="Name" 
-              rules={[{ required: true, message: 'Please enter name' }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item 
-              name="email" 
-              label="Email" 
-              rules={[{ required: true, message: 'Please enter email' }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item 
-              name="department" 
-              label="Department" 
-              rules={[{ required: true, message: 'Please select department' }]}
-            >
-              <Select>
-                {departmentOptions.map(dep => (
-                  <Option key={dep.id} value={dep.id}>{dep.name}</Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <Form.Item 
-              name="role" 
-              label="Role" 
-              rules={[{ required: true, message: 'Please select role' }]}
-            >
-              <Select>
-                <Option value="Admin">Admin</Option>
-                <Option value="Moderator">Moderator</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" htmlType="submit" block>
-                {selectedUser ? 'Update User' : 'Add User'}
-              </Button>
-            </Form.Item>
-          </Form>
+          <EmployeeForm
+            employee={selectedUser}
+            mode={selectedUser ? 'edit' : 'create'}
+            onSuccess={() => {
+              setDrawerVisible(false);
+              setSelectedUser(null);
+              refresh();
+            }}
+            onCancel={() => {
+              setDrawerVisible(false);
+              setSelectedUser(null);
+            }}
+          />
         </Drawer>
-      </Card>
+      </div>
     </ConfigProvider>
   );
 };

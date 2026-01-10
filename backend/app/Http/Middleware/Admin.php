@@ -25,15 +25,21 @@ class Admin
             ], 401);
         }
 
-        // Check if user has admin role (role_id === 1)
-        // Load role relationship if not already loaded
-        if (!$user->relationLoaded('role')) {
-            $user->load('role');
+        // Check if user is admin in the current company context
+        $companyId = $request->attributes->get('current_company_id') ?? 
+                     session('current_company_id') ?? 
+                     ($request->header('X-Company-ID') ? (int)$request->header('X-Company-ID') : null);
+        
+        if (!$companyId) {
+            return response()->json([
+                'message' => 'Company context required.'
+            ], 400);
         }
         
-        if (!$user->isAdmin()) {
+        // Check if user is admin in this company
+        if (!$user->isAdminInCompany($companyId)) {
             return response()->json([
-                'message' => 'Unauthorized. Admin access required.'
+                'message' => 'Unauthorized. Admin access required in this company.'
             ], 403);
         }
 
