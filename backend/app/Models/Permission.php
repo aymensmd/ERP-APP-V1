@@ -16,6 +16,7 @@ class Permission extends Model
         'description',
         'group',
         'sort_order',
+        'supports_scope',
     ];
 
     /**

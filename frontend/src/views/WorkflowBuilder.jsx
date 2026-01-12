@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import ReactFlow, {
   MiniMap,
@@ -9,8 +8,51 @@ import ReactFlow, {
   useEdgesState,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Card, Button, Drawer, Typography, Space, Input, message, Tooltip, Switch, Collapse, Modal, Upload } from 'antd';
-import { MailOutlined, ApiOutlined, ClockCircleOutlined, PlusOutlined, DeleteOutlined, SaveOutlined, FolderOpenOutlined, EditOutlined, CopyOutlined, UndoOutlined, RedoOutlined, LinkOutlined, BulbOutlined, ImportOutlined, ExportOutlined, PlayCircleOutlined, CloseOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons';
+import {
+  Card,
+  Badge,
+  Button,
+  Drawer,
+  Typography,
+  Space,
+  Input,
+  message,
+  Tooltip,
+  Switch,
+  Collapse,
+  Modal,
+  Upload,
+  Divider,
+  Tag,
+  Row,
+  Col
+} from 'antd';
+import {
+  MailOutlined,
+  ApiOutlined,
+  ClockCircleOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  SaveOutlined,
+  FolderOpenOutlined,
+  EditOutlined,
+  CopyOutlined,
+  UndoOutlined,
+  RedoOutlined,
+  LinkOutlined,
+  BulbOutlined,
+  ImportOutlined,
+  ExportOutlined,
+  PlayCircleOutlined,
+  CloseOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+  BlockOutlined,
+  BranchesOutlined,
+  SettingOutlined,
+  ThunderboltOutlined
+} from '@ant-design/icons';
+import { useStateContext } from '../contexts/ContextProvider';
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -23,8 +65,17 @@ const initialNodes = [
   {
     id: '1',
     type: 'input',
-    data: { label: 'Start' },
-    position: { x: 100, y: 100 },
+    data: { label: 'Workflow Trigger' },
+    position: { x: 250, y: 100 },
+    style: {
+      background: 'rgba(255, 255, 255, 0.7)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      borderRadius: '12px',
+      padding: '10px',
+      boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+      width: 150
+    }
   },
 ];
 
@@ -34,7 +85,7 @@ const TOOLBOX = [
   {
     type: 'http',
     label: 'HTTP Request',
-    icon: <ApiOutlined />,
+    icon: <ApiOutlined style={{ color: '#4f46e5' }} />,
     node: {
       type: 'default',
       data: { label: 'HTTP Request' },
@@ -43,7 +94,7 @@ const TOOLBOX = [
   {
     type: 'email',
     label: 'Send Email',
-    icon: <MailOutlined />,
+    icon: <MailOutlined style={{ color: '#10b981' }} />,
     node: {
       type: 'default',
       data: { label: 'Send Email' },
@@ -52,71 +103,60 @@ const TOOLBOX = [
   {
     type: 'delay',
     label: 'Delay',
-    icon: <ClockCircleOutlined />,
+    icon: <ClockCircleOutlined style={{ color: '#f59e0b' }} />,
     node: {
       type: 'default',
       data: { label: 'Delay' },
     },
   },
+  {
+    type: 'condition',
+    label: 'Condition',
+    icon: <BranchesOutlined style={{ color: '#ef4444' }} />,
+    node: {
+      type: 'default',
+      data: { label: 'Check Condition' },
+    },
+  },
 ];
 
 const WORKFLOW_STORAGE_KEY = 'workflow_builder_v1';
-const THEME_KEY = 'workflow_builder_theme';
 
 export default function WorkflowBuilder() {
+  const { theme } = useStateContext();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [workflowTitle, setWorkflowTitle] = useState('My Workflow');
+  const [workflowTitle, setWorkflowTitle] = useState('New Workflow Process');
   const [editingTitle, setEditingTitle] = useState(false);
   const dragNodeType = useRef(null);
-  const [theme, setTheme] = useState(localStorage.getItem(THEME_KEY) || 'light');
   const [toolboxCollapsed, setToolboxCollapsed] = useState(false);
   const [log, setLog] = useState([]);
   const [history, setHistory] = useState([]);
   const [future, setFuture] = useState([]);
   const [importModal, setImportModal] = useState(false);
-  // Theme toggle
-  const toggleTheme = () => {
-    const next = theme === 'light' ? 'dark' : 'light';
-    setTheme(next);
-    localStorage.setItem(THEME_KEY, next);
-  };
 
-  // Save/load/export/import workflow
+  // Load workflow on mount
   useEffect(() => {
     const saved = localStorage.getItem(WORKFLOW_STORAGE_KEY);
     if (saved) {
       try {
-        const { nodes, edges, title } = JSON.parse(saved);
-        if (nodes && edges) {
-          setNodes(nodes);
-          setEdges(edges);
+        const { nodes: savedNodes, edges: savedEdges, title } = JSON.parse(saved);
+        if (savedNodes && savedEdges) {
+          setNodes(savedNodes);
+          setEdges(savedEdges);
           if (title) setWorkflowTitle(title);
         }
-      } catch {}
+      } catch (err) {
+        console.error('Failed to load workflow', err);
+      }
     }
-    // eslint-disable-next-line
-  }, []);
+  }, [setNodes, setEdges]);
 
   const saveWorkflow = () => {
     localStorage.setItem(WORKFLOW_STORAGE_KEY, JSON.stringify({ nodes, edges, title: workflowTitle }));
-    message.success('Workflow saved!');
-  };
-  const loadWorkflow = () => {
-    const saved = localStorage.getItem(WORKFLOW_STORAGE_KEY);
-    if (saved) {
-      try {
-        const { nodes, edges, title } = JSON.parse(saved);
-        setNodes(nodes);
-        setEdges(edges);
-        if (title) setWorkflowTitle(title);
-        message.success('Workflow loaded!');
-      } catch {
-        message.error('Failed to load workflow.');
-      }
-    }
+    message.success('Workflow configuration saved locally');
   };
 
   const exportWorkflow = () => {
@@ -134,33 +174,35 @@ export default function WorkflowBuilder() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const { nodes, edges, title } = JSON.parse(e.target.result);
-        setNodes(nodes);
-        setEdges(edges);
+        const { nodes: impNodes, edges: impEdges, title } = JSON.parse(e.target.result);
+        setNodes(impNodes);
+        setEdges(impEdges);
         if (title) setWorkflowTitle(title);
-        message.success('Workflow imported!');
+        message.success('Workflow definition imported');
         setImportModal(false);
       } catch {
-        message.error('Invalid workflow file.');
+        message.error('Invalid JSON workflow file');
       }
     };
     reader.readAsText(file);
     return false;
   };
 
-  // Undo/redo
+  // History tracking for undo/redo
   const pushHistory = () => {
     setHistory((h) => [...h, { nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) }]);
     setFuture([]);
   };
+
   const undo = () => {
     if (history.length === 0) return;
-    setFuture((f) => [ { nodes, edges }, ...f ]);
+    setFuture((f) => [{ nodes, edges }, ...f]);
     const prev = history[history.length - 1];
     setNodes(prev.nodes);
     setEdges(prev.edges);
     setHistory((h) => h.slice(0, -1));
   };
+
   const redo = () => {
     if (future.length === 0) return;
     const next = future[0];
@@ -170,268 +212,320 @@ export default function WorkflowBuilder() {
     setFuture((f) => f.slice(1));
   };
 
-  // Log actions
-  const addLog = (msg) => setLog((l) => [msg, ...l.slice(0, 19)]);
+  const addLog = (msg) => setLog((l) => [msg, ...l.slice(0, 5)]);
 
   const onConnect = useCallback((params) => {
     pushHistory();
-    setEdges((eds) => addEdge(params, eds));
-    addLog(`Connected node ${params.source} to ${params.target}`);
+    setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#4f46e5' } }, eds));
+    addLog(`Connected ${params.source} → ${params.target}`);
   }, [setEdges, nodes, edges]);
 
   const onNodeClick = (_evt, node) => {
     setSelectedNode(node);
     setDrawerOpen(true);
-    addLog(`Selected node ${node.id}`);
   };
 
-  const onPaneClick = () => {
-    setDrawerOpen(false);
-    setSelectedNode(null);
-  };
-
-  // Drag-and-drop from toolbox
   const onDragStart = (event, tool) => {
     dragNodeType.current = tool;
     event.dataTransfer.effectAllowed = 'move';
   };
+
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
-      const reactFlowBounds = event.target.getBoundingClientRect();
+      const rect = event.target.getBoundingClientRect();
       const position = {
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top,
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
       };
+
       const tool = dragNodeType.current;
       if (!tool) return;
+
       pushHistory();
-      const id = (nodes.length + 1 + Math.floor(Math.random() * 10000)).toString();
+      const id = `node_${Date.now()}`;
       setNodes((nds) => [
         ...nds,
         {
           id,
           position,
-          ...tool.node,
-          data: { ...tool.node.data, id },
+          type: tool.node.type,
+          data: { label: tool.label, id },
+          style: {
+            background: 'rgba(255, 255, 255, 0.7)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '12px',
+            padding: '10px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+            minWidth: 150
+          }
         },
       ]);
-      addLog(`Added node ${tool.label}`);
-      dragNodeType.current = null;
+      addLog(`Added ${tool.label}`);
     },
     [nodes, setNodes]
   );
-  const onDragOver = (event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  };
 
-  // Node deletion
-  const deleteNode = (id) => {
+  const deleteNode = () => {
+    if (!selectedNode) return;
     pushHistory();
-    setNodes((nds) => nds.filter((n) => n.id !== id));
-    setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
+    setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
+    setEdges((eds) => eds.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id));
     setDrawerOpen(false);
     setSelectedNode(null);
-    addLog(`Deleted node ${id}`);
-  };
-
-  // Edge deletion
-  const onEdgeClick = (evt, edge) => {
-    evt.stopPropagation();
-    pushHistory();
-    setEdges((eds) => eds.filter((e) => e.id !== edge.id));
-    addLog(`Deleted edge ${edge.id}`);
-  };
-
-  // Node label editing
-  const updateNodeLabel = (id, label) => {
-    pushHistory();
-    setNodes((nds) =>
-      nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, label } } : n))
-    );
-    setSelectedNode((node) => node ? { ...node, data: { ...node.data, label } } : node);
-    addLog(`Renamed node ${id} to ${label}`);
-  };
-
-  // Copy/paste
-  const copyNode = () => {
-    if (!selectedNode) return;
-    const copy = { ...selectedNode, id: (nodes.length + 1 + Math.floor(Math.random() * 10000)).toString(), position: { x: selectedNode.position.x + 40, y: selectedNode.position.y + 40 } };
-    pushHistory();
-    setNodes((nds) => [...nds, copy]);
-    addLog(`Copied node ${selectedNode.id}`);
-  };
-
-  // Run/test mode (simulate)
-  const runWorkflow = () => {
-    addLog('Simulated workflow run!');
-    message.info('Workflow run simulated. (Add real logic as needed)');
   };
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', background: theme === 'dark' ? 'linear-gradient(90deg, #23272f 60%, #1a1d23 100%)' : 'linear-gradient(90deg, #f8fafc 60%, #f0f4ff 100%)', color: theme === 'dark' ? '#fff' : '#222' }}>
-      {/* Toolbox */}
-      <div style={{ width: toolboxCollapsed ? 48 : 260, background: theme === 'dark' ? '#23272f' : '#fff', borderRight: '1px solid #e6e6e6', padding: toolboxCollapsed ? 8 : 20, boxShadow: '2px 0 8px #0001', zIndex: 2, transition: 'width 0.2s' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: toolboxCollapsed ? 'center' : 'space-between', marginBottom: toolboxCollapsed ? 0 : 18 }}>
-          {!toolboxCollapsed && <Title level={4} style={{ margin: 0, color: theme === 'dark' ? '#fff' : '#2a3a4a' }}>Workflow Toolbox</Title>}
-          <Button icon={toolboxCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} size="small" onClick={() => setToolboxCollapsed(v => !v)} style={{ marginLeft: 8 }} />
+    <div style={{ height: 'calc(100vh - 64px)', display: 'flex', background: 'var(--bg-dashboard)', overflow: 'hidden' }}>
+      {/* Premium Sidebar Sidebar */}
+      <div
+        className="glass-card"
+        style={{
+          width: toolboxCollapsed ? 60 : 280,
+          margin: 16,
+          height: 'calc(100% - 32px)',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'width 0.3s ease',
+          zIndex: 10,
+          padding: toolboxCollapsed ? '16px 8px' : 20,
+          border: '1px solid rgba(255, 255, 255, 0.2)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          {!toolboxCollapsed && <Title level={4} className="text-gradient" style={{ margin: 0 }}>Components</Title>}
+          <Button
+            type="text"
+            icon={toolboxCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => setToolboxCollapsed(!toolboxCollapsed)}
+          />
         </div>
-        {!toolboxCollapsed && <>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          {TOOLBOX.map((tool) => (
-            <Card
-              key={tool.type}
-              size="small"
-              hoverable
-              style={{ marginBottom: 10, cursor: 'grab', borderRadius: 10, border: '1px solid #e6e6e6', background: theme === 'dark' ? '#23272f' : '#f7faff', color: theme === 'dark' ? '#fff' : '#222', transition: 'background 0.2s' }}
-              draggable
-              onDragStart={(e) => onDragStart(e, tool)}
-              onClick={() => {
-                // fallback for click-to-add
-                pushHistory();
-                const id = (nodes.length + 1 + Math.floor(Math.random() * 10000)).toString();
-                setNodes((nds) => [
-                  ...nds,
-                  {
-                    id,
-                    position: { x: 200 + Math.random() * 200, y: 100 + Math.random() * 200 },
-                    ...tool.node,
-                    data: { ...tool.node.data, id },
-                  },
-                ]);
-                addLog(`Added node ${tool.label}`);
-              }}
-            >
-              <Space>
-                {tool.icon}
-                <Text>{tool.label}</Text>
-                <Tooltip title="Drag to canvas or click to add"><Button icon={<PlusOutlined />} size="small" /></Tooltip>
-              </Space>
-            </Card>
-          ))}
-        </Space>
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Button icon={<SaveOutlined />} type="primary" style={{ marginRight: 8 }} onClick={saveWorkflow}>Save</Button>
-          <Button icon={<FolderOpenOutlined />} onClick={loadWorkflow} style={{ marginRight: 8 }}>Load</Button>
-          <Tooltip title="Export Workflow"><Button icon={<ExportOutlined />} onClick={exportWorkflow} style={{ marginRight: 8 }} /></Tooltip>
-          <Tooltip title="Import Workflow"><Button icon={<ImportOutlined />} onClick={() => setImportModal(true)} /></Tooltip>
-        </div>
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Tooltip title="Undo"><Button icon={<UndoOutlined />} onClick={undo} style={{ marginRight: 8 }} /></Tooltip>
-          <Tooltip title="Redo"><Button icon={<RedoOutlined />} onClick={redo} /></Tooltip>
-        </div>
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Tooltip title="Toggle dark/light mode"><Switch checkedChildren={<BulbOutlined />} unCheckedChildren={<BulbOutlined />} checked={theme === 'dark'} onChange={toggleTheme} /></Tooltip>
-        </div>
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Tooltip title="Simulate workflow run"><Button icon={<PlayCircleOutlined />} onClick={runWorkflow} type="dashed" /></Tooltip>
-        </div>
-        </>}
+
+        {!toolboxCollapsed && (
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: 12 }}>FLOW ELEMENTS</Text>
+            <Space direction="vertical" style={{ width: '100%' }} size={12}>
+              {TOOLBOX.map((tool) => (
+                <div
+                  key={tool.type}
+                  className="glass-inner-card tool-item"
+                  draggable
+                  onDragStart={(e) => onDragStart(e, tool)}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    cursor: 'grab',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {tool.icon}
+                  <Text strong>{tool.label}</Text>
+                </div>
+              ))}
+            </Space>
+
+            <Divider style={{ margin: '24px 0' }} />
+
+            <Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: 12 }}>ACTIONS</Text>
+            <Row gutter={[8, 8]}>
+              <Col span={12}>
+                <Button block icon={<SaveOutlined />} onClick={saveWorkflow} className="glass-inner-card">Save</Button>
+              </Col>
+              <Col span={12}>
+                <Button block icon={<FolderOpenOutlined />} className="glass-inner-card">Load</Button>
+              </Col>
+              <Col span={12}>
+                <Button block icon={<ExportOutlined />} onClick={exportWorkflow} className="glass-inner-card">Export</Button>
+              </Col>
+              <Col span={12}>
+                <Button block icon={<ImportOutlined />} onClick={() => setImportModal(true)} className="glass-inner-card">Import</Button>
+              </Col>
+            </Row>
+
+            <div style={{ marginTop: 24, display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <Tooltip title="Undo">
+                <Button shape="circle" icon={<UndoOutlined />} disabled={history.length === 0} onClick={undo} />
+              </Tooltip>
+              <Tooltip title="Redo">
+                <Button shape="circle" icon={<RedoOutlined />} disabled={future.length === 0} onClick={redo} />
+              </Tooltip>
+              <Tooltip title="Test Run">
+                <Button shape="circle" icon={<PlayCircleOutlined />} type="primary" style={{ background: 'var(--primary-gradient)', border: 'none' }} />
+              </Tooltip>
+            </div>
+          </div>
+        )}
       </div>
-      {/* Canvas and log */}
-      <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', background: theme === 'dark' ? '#23272f' : undefined }}>
-        {/* Header */}
-        <div style={{ padding: '18px 32px 8px 32px', background: theme === 'dark' ? 'rgba(30,32,38,0.98)' : 'rgba(255,255,255,0.95)', borderBottom: '1px solid #e6e6e6', display: 'flex', alignItems: 'center', zIndex: 1 }}>
-          {editingTitle ? (
-            <Input
-              value={workflowTitle}
-              onChange={e => setWorkflowTitle(e.target.value)}
-              onBlur={() => setEditingTitle(false)}
-              onPressEnter={() => setEditingTitle(false)}
-              style={{ fontSize: 22, fontWeight: 600, width: 320 }}
-              maxLength={40}
-              autoFocus
-            />
+
+      {/* Canvas Area */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <div style={{
+          position: 'absolute',
+          top: 24,
+          left: 24,
+          zIndex: 5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12
+        }}>
+          <div className="glass-card" style={{ padding: '8px 24px', borderRadius: 100, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <ThunderboltOutlined style={{ color: '#4f46e5' }} />
+            {editingTitle ? (
+              <Input
+                value={workflowTitle}
+                onChange={e => setWorkflowTitle(e.target.value)}
+                onBlur={() => setEditingTitle(false)}
+                onPressEnter={() => setEditingTitle(false)}
+                autoFocus
+                variant="borderless"
+                style={{ fontWeight: 600, width: 200 }}
+              />
+            ) : (
+              <Text strong style={{ cursor: 'pointer' }} onClick={() => setEditingTitle(true)}>
+                {workflowTitle} <EditOutlined style={{ fontSize: 12, opacity: 0.5, marginLeft: 4 }} />
+              </Text>
+            )}
+          </div>
+
+          <div className="glass-card" style={{ padding: '8px 16px', borderRadius: 100, fontSize: 12 }}>
+            <Badge status="processing" text="Draft Mode" />
+          </div>
+        </div>
+
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          onDrop={onDrop}
+          onDragOver={(e) => e.preventDefault()}
+          fitView
+          style={{ background: 'transparent' }}
+        >
+          <Background color="rgba(0,0,0,0.05)" gap={20} size={1} />
+          <Controls style={{ left: 24, bottom: 24 }} />
+          <MiniMap
+            style={{ right: 24, bottom: 24, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.2)' }}
+            maskColor="rgba(255,255,255,0.1)"
+          />
+        </ReactFlow>
+
+        {/* Floating Log */}
+        <div className="glass-card" style={{
+          position: 'absolute',
+          right: 24,
+          top: 24,
+          width: 250,
+          maxHeight: 180,
+          padding: 16,
+          fontSize: 12,
+          zIndex: 5
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: 4 }}>
+            <BlockOutlined /> <Text strong>Activity Log</Text>
+          </div>
+          {log.length === 0 ? (
+            <Text type="secondary">Waiting for actions...</Text>
           ) : (
-            <Title level={3} style={{ margin: 0, color: theme === 'dark' ? '#fff' : '#2a3a4a', fontWeight: 700, cursor: 'pointer' }} onClick={() => setEditingTitle(true)}>
-              <EditOutlined style={{ marginRight: 8, color: '#b3b3b3' }} />{workflowTitle}
-            </Title>
+            log.map((m, i) => <div key={i} style={{ marginBottom: 4 }}>• {m}</div>)
           )}
         </div>
-        {/* React Flow Canvas */}
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            onPaneClick={onPaneClick}
-            fitView
-            nodeTypes={nodeTypes}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            style={{ background: theme === 'dark' ? 'linear-gradient(135deg, #23272f 60%, #1a1d23 100%)' : 'linear-gradient(135deg, #f8fafc 60%, #e6f0ff 100%)', borderRadius: 0 }}
-            onEdgeClick={onEdgeClick}
-          >
-            <MiniMap nodeColor={n => n.type === 'input' ? '#1890ff' : '#13c2c2'} />
-            <Controls />
-            <Background gap={16} color={theme === 'dark' ? '#444' : '#e6e6e6'} />
-          </ReactFlow>
-        </div>
-        {/* Mini log panel */}
-        <div style={{ position: 'absolute', right: 24, bottom: 24, width: 320, background: theme === 'dark' ? '#23272f' : '#fff', border: '1px solid #e6e6e6', borderRadius: 8, boxShadow: '0 2px 12px #0002', zIndex: 10, maxHeight: 220, overflow: 'auto', fontSize: 13 }}>
-          <div style={{ padding: '8px 12px', borderBottom: '1px solid #e6e6e6', fontWeight: 600, background: theme === 'dark' ? '#23272f' : '#f7faff' }}>
-            <LinkOutlined style={{ marginRight: 6 }} />Workflow Log
-            <Button icon={<CloseOutlined />} size="small" style={{ float: 'right', marginTop: 2 }} onClick={() => setLog([])} />
-          </div>
-          <div style={{ padding: 8 }}>
-            {log.length === 0 ? <Text type="secondary">No actions yet.</Text> : log.map((l, i) => <div key={i}>{l}</div>)}
-          </div>
-        </div>
-        {/* Node Config Drawer */}
-        <Drawer
-          title={selectedNode ? `Configure: ${selectedNode.data.label}` : ''}
-          placement="right"
-          onClose={() => setDrawerOpen(false)}
-          open={drawerOpen}
-          width={360}
-          styles={{ body: { background: theme === 'dark' ? '#23272f' : '#fff', color: theme === 'dark' ? '#fff' : '#222' } }}
-        >
-          {selectedNode ? (
-            <div>
-              <Text strong>ID:</Text> <Text code>{selectedNode.id}</Text>
-              <br />
-              <Text strong>Type:</Text> <Text>{selectedNode.type}</Text>
-              <br />
-              <div style={{ margin: '16px 0' }}>
-                <Text strong>Label:</Text>
+      </div>
+
+      <Drawer
+        title={
+          <Space>
+            <SettingOutlined />
+            <span>Node Configuration</span>
+          </Space>
+        }
+        placement="right"
+        width={400}
+        onClose={() => setDrawerOpen(false)}
+        open={drawerOpen}
+        className="premium-modal"
+      >
+        {selectedNode && (
+          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <Card className="glass-inner-card">
+              <Statistic title="Node Reference" value={selectedNode.id} valueStyle={{ fontSize: 14, fontFamily: 'monospace' }} />
+              <Tag color="purple" style={{ marginTop: 8 }}>{selectedNode.type?.toUpperCase() || 'DEFAULT'}</Tag>
+            </Card>
+
+            <Form layout="vertical">
+              <Form.Item label="Display Label">
                 <Input
                   value={selectedNode.data.label}
-                  onChange={e => updateNodeLabel(selectedNode.id, e.target.value)}
-                  style={{ marginTop: 4, width: '100%' }}
-                  maxLength={32}
+                  onChange={(e) => {
+                    const label = e.target.value;
+                    setNodes(nds => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, label } } : n));
+                  }}
+                  prefix={<EditOutlined />}
+                  size="large"
                 />
-              </div>
-              <Space>
-                <Button icon={<CopyOutlined />} onClick={copyNode}>Copy</Button>
-                <Button danger icon={<DeleteOutlined />} onClick={() => deleteNode(selectedNode.id)} style={{ marginTop: 0 }}>Delete Node</Button>
-              </Space>
-            </div>
-          ) : null}
-        </Drawer>
-        {/* Import Modal */}
-        <Modal
-          title="Import Workflow"
-          open={importModal}
-          onCancel={() => setImportModal(false)}
-          footer={null}
-        >
-          <Upload.Dragger
-            accept=".json"
-            beforeUpload={importWorkflow}
-            showUploadList={false}
-            style={{ padding: 24 }}
-          >
-            <p className="ant-upload-drag-icon">
-              <ImportOutlined style={{ fontSize: 32 }} />
-            </p>
-            <p className="ant-upload-text">Click or drag a workflow JSON file to import</p>
-          </Upload.Dragger>
-        </Modal>
-      </div>
+              </Form.Item>
+
+              <Form.Item label="Execution Priority">
+                <Select defaultValue="normal">
+                  <Option value="high">High Priority</Option>
+                  <Option value="normal">Normal</Option>
+                  <Option value="low">Low Priority</Option>
+                </Select>
+              </Form.Item>
+
+              <Divider />
+
+              <Button danger block size="large" icon={<DeleteOutlined />} onClick={deleteNode}>
+                Remove Component
+              </Button>
+            </Form>
+          </Space>
+        )}
+      </Drawer>
+
+      <Modal
+        title="Import Workflow Definition"
+        open={importModal}
+        onCancel={() => setImportModal(false)}
+        footer={null}
+        centered
+        className="premium-modal"
+      >
+        <Upload.Dragger accept=".json" beforeUpload={importWorkflow} showUploadList={false}>
+          <div style={{ padding: '40px 0' }}>
+            <ImportOutlined style={{ fontSize: 48, color: '#4f46e5', marginBottom: 16 }} />
+            <p className="ant-upload-text">Drop workflow JSON here or click to browse</p>
+          </div>
+        </Upload.Dragger>
+      </Modal>
+
+      <style>{`
+        .tool-item:hover {
+          background: rgba(255, 255, 255, 0.8) !important;
+          transform: translateX(4px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .react-flow__node {
+          cursor: pointer;
+        }
+        .react-flow__handle {
+          width: 8px;
+          height: 8px;
+          background: #4f46e5;
+        }
+        .react-flow__controls-button {
+          background: rgba(255, 255, 255, 0.7) !important;
+          border: 1px solid rgba(255, 255, 255, 0.3) !important;
+          backdrop-filter: blur(8px);
+        }
+      `}</style>
     </div>
   );
 }

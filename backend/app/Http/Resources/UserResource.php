@@ -52,6 +52,7 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'is_platform_admin' => (bool)$this->is_platform_admin,
             'email' => $this->email,
             'date_of_birth' => $this->date_of_birth,
             'genre' => $this->genre,

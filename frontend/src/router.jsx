@@ -31,6 +31,7 @@ import Customers from './views/Customers'; // Import Customers
 import Invoices from './views/Invoices'; // Import Invoices
 import Onboarding from './views/Onboarding'; // Import Onboarding
 import Shifts from './views/Shifts'; // Import Shifts
+import TenantManagement from './views/TenantManagement'; // Import TenantManagement
 import React, { Suspense } from 'react';
 
 // Lazy-load feature pages to reduce initial bundle size
@@ -111,7 +112,7 @@ const router = createBrowserRouter([
       {
         path: '/settings',
         element: (
-          <PrivateRoute requiredPermissions={['settings.view']}>
+          <PrivateRoute>
             <SettingsPage />
           </PrivateRoute>
         )
@@ -277,11 +278,21 @@ const router = createBrowserRouter([
       {
         path: '/users_setting',
         element: (
-          <PrivateRoute 
+          <PrivateRoute
             allowedRoles={['admin', 'manager']}
             requiredPermissions={['employees.view']}
           >
             <UserSettingView />
+          </PrivateRoute>
+        )
+      },
+      {
+        path: '/tenants',
+        element: (
+          <PrivateRoute
+            allowedRoles={['admin']}
+          >
+            <TenantManagement />
           </PrivateRoute>
         )
       },

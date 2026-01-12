@@ -1,6 +1,7 @@
-import Axios from 'axios';
+import axiosInstance from 'axios';
+import { storage, STORAGE_KEYS } from './utils/storage';
 
-const axios = Axios.create({
+const axios = axiosInstance.create({
   baseURL: "http://localhost:8000/api",
   withCredentials: true,
   headers: {
@@ -18,13 +19,13 @@ if (csrfTokenMeta) {
 // Request interceptor to add token and company context dynamically
 axios.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('ACCESS_TOKEN');
+    const token = storage.get(STORAGE_KEYS.TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
     // Add company context to all requests
-    const companyId = localStorage.getItem('current_company_id');
+    const companyId = storage.get(STORAGE_KEYS.COMPANY_ID);
     if (companyId) {
       config.headers['X-Company-ID'] = companyId;
     }
@@ -53,10 +54,7 @@ axios.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('ACCESS_TOKEN');
-      localStorage.removeItem('USER');
-      localStorage.removeItem('USER_DATA');
-      localStorage.removeItem('USER_ID');
+      storage.clearAuth();
       window.location.href = '/login';
     }
     return Promise.reject(error);

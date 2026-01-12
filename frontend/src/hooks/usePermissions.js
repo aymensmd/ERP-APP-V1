@@ -50,8 +50,8 @@ export const usePermissions = () => {
   const hasPermission = (permissionName) => {
     if (!permissionName) return false;
     
-    // Admin (role_id === 1) has all permissions
-    if (user?.role_id === 1) {
+    // Admin (role_id === 1) or Platform Admin has all permissions
+    if (user?.is_platform_admin || user?.role_id === 1) {
       return true;
     }
     
@@ -74,8 +74,8 @@ export const usePermissions = () => {
       return false;
     }
     
-    // Admin has all permissions
-    if (user?.role_id === 1) {
+    // Admin (role_id === 1) or Platform Admin has all permissions
+    if (user?.is_platform_admin || user?.role_id === 1) {
       return true;
     }
     
@@ -98,8 +98,8 @@ export const usePermissions = () => {
       return false;
     }
     
-    // Admin has all permissions
-    if (user?.role_id === 1) {
+    // Admin (role_id === 1) or Platform Admin has all permissions
+    if (user?.is_platform_admin || user?.role_id === 1) {
       return true;
     }
     
@@ -117,7 +117,7 @@ export const usePermissions = () => {
    * @returns {boolean}
    */
   const isAdmin = () => {
-    return user?.role_id === 1;
+    return user?.is_platform_admin || user?.role_id === 1;
   };
 
   /**

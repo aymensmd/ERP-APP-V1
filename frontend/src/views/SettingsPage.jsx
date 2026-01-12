@@ -1,37 +1,39 @@
 // settingsPage.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Typography, 
-  Divider, 
-  Switch, 
-  Button, 
-  Modal, 
-  Form, 
-  Input, 
-  message, 
-  Popconfirm, 
-  Avatar, 
+import {
+  Card,
+  Typography,
+  Divider,
+  Switch,
+  Button,
+  Modal,
+  Form,
+  Input,
+  message,
+  Popconfirm,
+  Avatar,
   List,
   Row,
   Col,
   Space,
-  Badge
+  Badge,
+  Tag
 } from 'antd';
-import { 
-  SettingOutlined, 
-  LockOutlined, 
-  BellOutlined, 
-  UserOutlined, 
-  ExportOutlined, 
-  QuestionCircleOutlined, 
-  LogoutOutlined, 
+import {
+  SettingOutlined,
+  LockOutlined,
+  BellOutlined,
+  UserOutlined,
+  ExportOutlined,
+  QuestionCircleOutlined,
+  LogoutOutlined,
   MobileOutlined,
   SunOutlined,
   MoonOutlined
 } from '@ant-design/icons';
 import { useStateContext } from '../contexts/ContextProvider';
 import axios from '../axios';
+import { storage, STORAGE_KEYS } from '../utils/storage';
 import AnyNamecrm from '../assets/AnyNamecrm.png';
 
 const { Title, Text } = Typography;
@@ -80,7 +82,7 @@ const SettingsPage = () => {
         const response = await axios.get('/employees', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const userId = localStorage.getItem('USER_ID');
+        const userId = storage.get(STORAGE_KEYS.USER_ID);
         const currentUser = response.data.find(emp => String(emp.id) === String(userId));
 
         if (currentUser) {
@@ -103,24 +105,47 @@ const SettingsPage = () => {
     { id: 2, device: 'iPhone 14', location: 'Sousse, Tunisia', lastActive: '2 days ago', current: false },
   ];
 
-  const handlePasswordOk = () => {
-    form.validateFields(['currentPassword', 'newPassword', 'confirmPassword'])
-      .then(values => {
-        setPasswordModalVisible(false);
-        message.success('Password changed successfully!');
-        form.resetFields();
-      })
-      .catch(() => {});
+  const handlePasswordOk = async () => {
+    try {
+      const values = await form.validateFields(['currentPassword', 'newPassword', 'confirmPassword']);
+      if (values.newPassword !== values.confirmPassword) {
+        message.error('New passwords do not match');
+        return;
+      }
+
+      await axios.put(`/employees/${contextUser.id}`, {
+        old_password: values.currentPassword,
+        password: values.newPassword,
+        password_confirmation: values.confirmPassword
+      });
+
+      setPasswordModalVisible(false);
+      message.success('Password changed successfully!');
+      form.resetFields();
+    } catch (err) {
+      console.error('Password change error:', err);
+      const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to change password';
+      message.error(msg);
+    }
   };
 
-  const handleEmailOk = () => {
-    form.validateFields(['email'])
-      .then(values => {
-        setEmailModalVisible(false);
-        message.success('Email updated successfully!');
-        form.resetFields();
-      })
-      .catch(() => {});
+  const handleEmailOk = async () => {
+    try {
+      const values = await form.validateFields(['email']);
+
+      await axios.put(`/employees/${contextUser.id}`, {
+        email: values.email
+      });
+
+      setEmailModalVisible(false);
+      message.success('Email updated successfully!');
+      setUser({ ...contextUser, email: values.email });
+      form.resetFields();
+    } catch (err) {
+      console.error('Email update error:', err);
+      const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to update email';
+      message.error(msg);
+    }
   };
 
   const toggleTheme = () => {
@@ -130,125 +155,140 @@ const SettingsPage = () => {
   };
 
   return (
-    <div style={{ 
-      padding: '32px', 
-      minHeight: 'calc(100vh - 64px)', 
-      backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f5f5f7',
+    <div style={{
+      padding: '32px',
+      minHeight: 'calc(100vh - 64px)',
+      background: 'var(--bg-dashboard)',
       maxWidth: '1400px',
       margin: '0 auto',
       width: '100%'
     }}>
-      <Card 
-        style={{ 
-          maxWidth: '100%', 
-          margin: '0 auto', 
-          borderRadius: '16px', 
-          backgroundColor: colors.cardBg, 
-          borderColor: colors.border,
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-          border: 'none'
-        }}
-        styles={{ body: { padding: '32px' } }}
-      >
+      <Card className="glass-card" styles={{ body: { padding: '32px' } }}>
+        <Title level={2} className="text-gradient" style={{ marginBottom: 32 }}>Settings</Title>
         {/* Profile */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24, paddingBottom: 24, borderBottom: `1px solid ${colors.border}` }}>
-          <Avatar size={80} src={user.avatar || AnyNamecrm} style={{ backgroundColor: colors.primary, color: '#fff', fontSize: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 32, paddingBottom: 32, borderBottom: `1px solid rgba(255,255,255,0.1)` }}>
+          <Avatar size={100} src={user.avatar} style={{
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            border: '2px solid rgba(255,255,255,0.2)',
+            fontSize: 40
+          }}>
             {user.name.charAt(0).toUpperCase()}
           </Avatar>
           <div>
-            <Title level={3} style={{ margin: 0, color: colors.textPrimary }}>{user.name}</Title>
-            <Text type="secondary" style={{ color: colors.textSecondary }}>{user.email}</Text>
-            <div style={{ marginTop: 8 }}>
-              <Text style={{ color: colors.textSecondary }}>
+            <Title level={3} style={{ margin: 0, color: '#fff' }}>{user.name}</Title>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16 }}>{user.email}</Text>
+            <div style={{ marginTop: 12 }}>
+              <Tag color="blue" style={{ borderRadius: 12, padding: '2px 12px' }}>
                 <UserOutlined style={{ marginRight: 8 }} />
-                {typeof user.role === 'string' ? user.role : (user.role?.name || 'N/A')}
-              </Text>
+                {typeof user.role === 'string' ? user.role : (user.role?.name || 'Employee')}
+              </Tag>
             </div>
           </div>
         </div>
 
-        <Row gutter={[24, 24]}>
-          {/* Left */}
+        <Row gutter={[32, 32]}>
           <Col xs={24} md={12}>
-            <Card title={<Text strong style={{ color: colors.primary }}><UserOutlined style={{ marginRight: 8 }} />Account Settings</Text>} variant="outlined" style={{ backgroundColor: colors.cardBg }}>
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <Button type="primary" block onClick={() => setPasswordModalVisible(true)} style={{ textAlign: 'left' }}>Change Password</Button>
-                <Button block onClick={() => setEmailModalVisible(true)} style={{ textAlign: 'left' }}>Update Email</Button>
+            <Card
+              className="glass-card"
+              title={<span style={{ color: '#fff' }}><UserOutlined style={{ marginRight: 8 }} />Account Security</span>}
+              style={{ height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none' }}
+            >
+              <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <Text strong style={{ color: '#fff', display: 'block' }}>Password</Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>Change your current account password</Text>
+                  </div>
+                  <Button type="primary" ghost onClick={() => setPasswordModalVisible(true)}>Change</Button>
+                </div>
+
+                <Divider style={{ margin: '12px 0', borderColor: 'rgba(255,255,255,0.1)' }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <Text strong style={{ color: '#fff', display: 'block' }}>Email Address</Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{user.email}</Text>
+                  </div>
+                  <Button type="primary" ghost onClick={() => setEmailModalVisible(true)}>Update</Button>
+                </div>
               </Space>
-            </Card>
-            <Card title={<Text strong style={{ color: colors.primary }}><MobileOutlined style={{ marginRight: 8 }} />Active Sessions</Text>} variant="outlined" style={{ marginTop: 24, backgroundColor: colors.cardBg }}>
-              <List
-                size="small"
-                dataSource={sessions}
-                renderItem={item => (
-                  <List.Item
-                    style={{ padding: '12px 0', borderBottom: `1px solid ${colors.border}` }}
-                    actions={item.current ? [<Badge status="success" text="Current" />] : [<Button size="small" type="link" icon={<LogoutOutlined />} danger>Logout</Button>]}
-                  >
-                    <List.Item.Meta
-                      avatar={<Avatar icon={<MobileOutlined />} style={{ background: colors.avatarBg, color: colors.primary }} />}
-                      title={<Text style={{ color: colors.textPrimary }}>{item.device}</Text>}
-                      description={<Text type="secondary">{item.location} • Last active: {item.lastActive}</Text>}
-                    />
-                  </List.Item>
-                )}
-              />
             </Card>
           </Col>
 
           {/* Right */}
           <Col xs={24} md={12}>
-            <Card title={<Text strong style={{ color: colors.primary }}><SettingOutlined style={{ marginRight: 8 }} />Preferences</Text>} variant="outlined" style={{ backgroundColor: colors.cardBg }}>
+            <Card
+              className="glass-card"
+              title={<span style={{ color: '#fff' }}><SettingOutlined style={{ marginRight: 8 }} />App Preferences</span>}
+              style={{ height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none' }}
+            >
               <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text style={{ color: colors.textPrimary }}><SunOutlined style={{ marginRight: 8 }} />Theme</Text>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.8)' }}><SunOutlined style={{ marginRight: 8 }} />Dark Mode Theme</Text>
                   <Switch checked={theme === 'dark'} onChange={toggleTheme} checkedChildren={<MoonOutlined />} unCheckedChildren={<SunOutlined />} />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text style={{ color: colors.textPrimary }}><BellOutlined style={{ marginRight: 8 }} />Email Notifications</Text>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.8)' }}><BellOutlined style={{ marginRight: 8 }} />Email Notifications</Text>
                   <Switch checked={emailNotifications} onChange={setEmailNotifications} />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text style={{ color: colors.textPrimary }}><MobileOutlined style={{ marginRight: 8 }} />SMS Notifications</Text>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.8)' }}><MobileOutlined style={{ marginRight: 8 }} />SMS Notifications</Text>
                   <Switch checked={smsNotifications} onChange={setSmsNotifications} />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text style={{ color: colors.textPrimary }}><LockOutlined style={{ marginRight: 8 }} />Two-Factor Authentication</Text>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.8)' }}><LockOutlined style={{ marginRight: 8 }} />Two-Factor Auth</Text>
                   <Switch checked={is2FAEnabled} onChange={set2FAEnabled} />
                 </div>
               </Space>
             </Card>
           </Col>
         </Row>
-
-        {/* Modals */}
-        <Modal
-          title="Change Password"
-          open={isPasswordModalVisible}
-          onOk={handlePasswordOk}
-          onCancel={() => setPasswordModalVisible(false)}
-          okText="Save"
-        >
-          <Form form={form} layout="vertical">
-            <Form.Item name="currentPassword" label="Current Password" rules={[{ required: true, message: 'Please input your current password!' }]}> <Input.Password /> </Form.Item>
-            <Form.Item name="newPassword" label="New Password" rules={[{ required: true, message: 'Please input your new password!' }]}> <Input.Password /> </Form.Item>
-            <Form.Item name="confirmPassword" label="Confirm Password" rules={[{ required: true, message: 'Please confirm your new password!' }]}> <Input.Password /> </Form.Item>
-          </Form>
-        </Modal>
-
-        <Modal
-          title="Update Email"
-          open={isEmailModalVisible}
-          onOk={handleEmailOk}
-          onCancel={() => setEmailModalVisible(false)}
-          okText="Save"
-        >
-          <Form form={form} layout="vertical">
-            <Form.Item name="email" label="New Email" rules={[{ required: true, message: 'Please input your new email!' }, { type: 'email', message: 'Please enter a valid email!' }]}> <Input /> </Form.Item>
-          </Form>
-        </Modal>
-
       </Card>
+
+      <Card className="glass-card" style={{ marginTop: 32 }} title={<span style={{ color: '#fff' }}><MobileOutlined style={{ marginRight: 8 }} />Active Sessions</span>}>
+        <List
+          dataSource={sessions}
+          renderItem={item => (
+            <List.Item
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
+              actions={item.current ? [<Badge status="success" text={<span style={{ color: '#fff' }}>Current</span>} />] : [<Button size="small" type="link" icon={<LogoutOutlined />} danger>End Session</Button>]}
+            >
+              <List.Item.Meta
+                avatar={<Avatar icon={<MobileOutlined />} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }} />}
+                title={<Text style={{ color: '#fff' }}>{item.device}</Text>}
+                description={<Text style={{ color: 'rgba(255,255,255,0.5)' }}>{item.location} • Last active: {item.lastActive}</Text>}
+              />
+            </List.Item>
+          )}
+        />
+      </Card>
+
+      {/* Modals */}
+      <Modal
+        title="Change Password"
+        open={isPasswordModalVisible}
+        onOk={handlePasswordOk}
+        onCancel={() => setPasswordModalVisible(false)}
+        okText="Save"
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="currentPassword" label="Current Password" rules={[{ required: true, message: 'Please input your current password!' }]}> <Input.Password /> </Form.Item>
+          <Form.Item name="newPassword" label="New Password" rules={[{ required: true, message: 'Please input your new password!' }]}> <Input.Password /> </Form.Item>
+          <Form.Item name="confirmPassword" label="Confirm Password" rules={[{ required: true, message: 'Please confirm your new password!' }]}> <Input.Password /> </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Update Email"
+        open={isEmailModalVisible}
+        onOk={handleEmailOk}
+        onCancel={() => setEmailModalVisible(false)}
+        okText="Save"
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="email" label="New Email" rules={[{ required: true, message: 'Please input your new email!' }, { type: 'email', message: 'Please enter a valid email!' }]}> <Input /> </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

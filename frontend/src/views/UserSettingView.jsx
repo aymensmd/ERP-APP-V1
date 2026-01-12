@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { Layout, Menu, ConfigProvider } from 'antd';
-import { 
-  TeamOutlined, 
-  CalendarOutlined, 
-  TableOutlined
+import {
+  TeamOutlined,
+  CalendarOutlined,
+  TableOutlined,
+  ApartmentOutlined,
+  SafetyCertificateOutlined
 } from '@ant-design/icons';
 import EmployeViewComponent from './EmployeViewComponent';
 import UserTable from './UserTable';
 import EventsComponent from './EventsComponent';
+import DepartmentManagementComponent from './DepartmentManagementComponent';
+import RoleManagementComponent from './RoleManagementComponent';
 import { Outlet } from 'react-router-dom';
 import VacationComponent from './VacationComponent';
 import { useStateContext } from '../contexts/ContextProvider';
@@ -55,6 +59,10 @@ function UserSettingView({ onSelectMenuItem }) {
         return <VacationComponent />;
       case '3':
         return <EventsComponent />;
+      case '4':
+        return <DepartmentManagementComponent />;
+      case '5':
+        return <RoleManagementComponent />;
       default:
         return null;
     }
@@ -76,6 +84,16 @@ function UserSettingView({ onSelectMenuItem }) {
       icon: <TableOutlined style={{ fontSize: 18 }} />,
       label: 'Events',
     },
+    {
+      key: '4',
+      icon: <ApartmentOutlined style={{ fontSize: 18 }} />,
+      label: 'Departments',
+    },
+    {
+      key: '5',
+      icon: <SafetyCertificateOutlined style={{ fontSize: 18 }} />,
+      label: 'Roles & Permissions',
+    },
   ];
 
   return (
@@ -89,17 +107,17 @@ function UserSettingView({ onSelectMenuItem }) {
         },
       }}
     >
-      <Layout style={{ 
-        background: colors.bgContainer, 
+      <Layout style={{
+        background: colors.bgContainer,
         minHeight: '100vh',
         transition: 'all 0.2s'
       }}>
         {/* Header */}
-        <Header 
-          style={{ 
+        <Header
+          style={{
             display: 'flex',
-            alignItems: 'center', 
-            background: colors.headerBg, 
+            alignItems: 'center',
+            background: colors.headerBg,
             boxShadow: '0 2px 4px rgba(0, 0, 0, 0.08)',
             borderRadius: '0 0 8px 8px',
             marginBottom: 12,
@@ -116,12 +134,12 @@ function UserSettingView({ onSelectMenuItem }) {
             mode="horizontal"
             defaultSelectedKeys={['1']}
             selectedKeys={[current]}
-            style={{ 
-              flex: 1, 
-              minWidth: 0, 
-              background: 'transparent', 
-              fontWeight: 600, 
-              fontSize: 15, 
+            style={{
+              flex: 1,
+              minWidth: 0,
+              background: 'transparent',
+              fontWeight: 600,
+              fontSize: 15,
               border: 'none',
               lineHeight: '56px'
             }}

@@ -9,8 +9,7 @@ use App\Traits\Auditable;
 
 class Lead extends Model
 {
-    use HasFactory, HasCompany, Auditable;
-use App\Traits\HasAuthorization;
+    use HasFactory, HasCompany, Auditable, \App\Traits\HasAuthorization;
 
     protected $fillable = [
         'company_id',

@@ -22,7 +22,9 @@ const OrganizationalChart = () => {
   const fetchHierarchy = async () => {
     try {
       setLoading(true);
+      // Use the new hierarchy endpoint
       const response = await axios.get('/organizational-chart');
+      // The new endpoint returns the roots array directly
       setHierarchy(response.data || []);
     } catch (error) {
       console.error('Error fetching organizational chart:', error);
@@ -35,19 +37,26 @@ const OrganizationalChart = () => {
   const buildTreeData = (nodes) => {
     return nodes.map(node => ({
       title: (
-        <Space style={{ padding: '8px 12px', background: '#f5f5f5', borderRadius: 8, width: '100%' }}>
-          <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }}>
-            {node.name?.charAt(0)}
-          </Avatar>
+        <Space style={{ padding: '8px 12px', background: '#f5f5f5', borderRadius: 8, width: '100%', border: node.type === 'department' ? '1px solid #1890ff' : '1px solid #d9d9d9' }}>
+          {node.type === 'department' ? (
+            <Avatar icon={<ApartmentOutlined />} style={{ backgroundColor: '#faad14' }} />
+          ) : (
+            <Avatar icon={<UserOutlined />} src={node.avatar} style={{ backgroundColor: '#1890ff' }}>
+              {node.name?.charAt(0)}
+            </Avatar>
+          )}
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, fontSize: 14 }}>{node.name}</div>
-            <div style={{ fontSize: 12, color: '#8c8c8c' }}>{node.position || 'Employee'}</div>
-            <div style={{ fontSize: 11, color: '#8c8c8c' }}>{node.email}</div>
+            <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+              {node.type === 'department' ? `Head: ${node.head}` : (node.position || 'Employee')}
+            </div>
           </div>
-          <Tag color="blue">{node.role_id === 1 ? 'Admin' : node.role_id === 2 ? 'Manager' : 'Employee'}</Tag>
+          {node.type === 'user' && (
+            <Tag color="blue">{node.role_id === 1 ? 'Admin' : node.role_id === 2 ? 'Manager' : 'Employee'}</Tag>
+          )}
         </Space>
       ),
-      key: node.id,
+      key: node.key,
       children: node.children && node.children.length > 0 ? buildTreeData(node.children) : undefined,
     }));
   };
@@ -58,7 +67,7 @@ const OrganizationalChart = () => {
     try {
       // Dynamically import html2canvas only when needed
       const html2canvas = (await import('html2canvas')).default;
-      
+
       const canvas = await html2canvas(chartRef.current, {
         backgroundColor: '#ffffff',
         scale: 2,
@@ -66,7 +75,7 @@ const OrganizationalChart = () => {
         useCORS: true,
         allowTaint: true,
       });
-      
+
       return canvas;
     } catch (error) {
       console.error('Error capturing chart:', error);
@@ -79,7 +88,7 @@ const OrganizationalChart = () => {
     try {
       setExporting(true);
       const canvas = await captureChart();
-      
+
       if (!canvas) {
         setExporting(false);
         return;
@@ -108,7 +117,7 @@ const OrganizationalChart = () => {
     try {
       setExporting(true);
       const canvas = await captureChart();
-      
+
       if (!canvas) {
         setExporting(false);
         return;
@@ -117,7 +126,7 @@ const OrganizationalChart = () => {
       // Try to use jsPDF if available, otherwise fallback to image download
       try {
         const { jsPDF } = await import('jspdf');
-        
+
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
           orientation: 'landscape',
@@ -127,7 +136,7 @@ const OrganizationalChart = () => {
 
         const imgWidth = 297; // A4 width in mm
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
+
         let heightLeft = imgHeight;
         let position = 0;
 
@@ -149,7 +158,7 @@ const OrganizationalChart = () => {
         handleExportPNG();
         message.info('PDF export requires jsPDF. Exported as PNG instead. Install: npm install jspdf');
       }
-      
+
       setExporting(false);
     } catch (error) {
       console.error('Export error:', error);
@@ -283,7 +292,7 @@ const OrganizationalChart = () => {
         </Space>
       }
     >
-      <div 
+      <div
         ref={chartRef}
         style={{ overflowX: 'auto', padding: '20px' }}
         id="org-chart-container"

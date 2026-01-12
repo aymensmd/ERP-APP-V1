@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { storage, STORAGE_KEYS } from '../utils/storage';
 
 export const useAuthCheck = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -7,7 +8,7 @@ export const useAuthCheck = () => {
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = localStorage.getItem('ACCESS_TOKEN'); // Ensure consistent key usage
+      const token = storage.get(STORAGE_KEYS.TOKEN); // Ensure consistent key usage
       const isAuth = !!token;
       setIsAuthenticated(isAuth);
 
@@ -21,7 +22,7 @@ export const useAuthCheck = () => {
 
     // Add event listener for storage changes
     const handleStorageChange = (event) => {
-      if (event.key === 'ACCESS_TOKEN') {
+      if (event.key === STORAGE_KEYS.TOKEN) {
         checkAuth();
       }
     };

@@ -1,9 +1,9 @@
-import { 
-  BellOutlined, 
-  UserOutlined, 
-  SunOutlined, 
+import {
+  BellOutlined,
+  UserOutlined,
+  SunOutlined,
   MoonOutlined,
-  QuestionCircleOutlined, 
+  QuestionCircleOutlined,
   MailOutlined,
   SettingOutlined,
   LogoutOutlined,
@@ -12,18 +12,18 @@ import {
   BankOutlined,
   SwapOutlined
 } from '@ant-design/icons';
-import { 
-  Avatar, 
-  Flex, 
-  Dropdown, 
-  Card, 
-  Button, 
-  Badge, 
-  List, 
-  Modal, 
-  Divider, 
-  Typography, 
-  Space, 
+import {
+  Avatar,
+  Flex,
+  Dropdown,
+  Card,
+  Button,
+  Badge,
+  List,
+  Modal,
+  Divider,
+  Typography,
+  Space,
   Tooltip,
   Switch,
   Select
@@ -106,8 +106,8 @@ const CustomHeader = () => {
   };
 
   const UserMenu = () => (
-    <Card 
-      style={{ 
+    <Card
+      style={{
         width: 280,
         padding: 0,
 
@@ -119,11 +119,11 @@ const CustomHeader = () => {
     >
       <Flex vertical gap={16} style={{ padding: 24 }}>
         <Flex align="center" gap={16}>
-          <Avatar 
-            size={64} 
+          <Avatar
+            size={64}
             src={user?.avatar}
             icon={<UserOutlined />}
-            style={{ 
+            style={{
               backgroundColor: currentTheme.primary,
               color: '#fff',
               fontSize: 24,
@@ -144,11 +144,11 @@ const CustomHeader = () => {
         <Divider style={{ margin: 0, borderColor: currentTheme.border }} />
 
         <Flex vertical gap={4}>
-          <Button 
-            type="text" 
+          <Button
+            type="text"
             icon={<DashboardOutlined />}
-            block 
-            style={{ 
+            block
+            style={{
               textAlign: 'left',
               height: 40,
               color: currentTheme.textPrimary,
@@ -158,11 +158,11 @@ const CustomHeader = () => {
             Dashboard
           </Button>
 
-          <Button 
-            type="text" 
+          <Button
+            type="text"
             icon={<ProfileOutlined />}
-            block 
-            style={{ 
+            block
+            style={{
               textAlign: 'left',
               height: 40,
               color: currentTheme.textPrimary,
@@ -172,11 +172,11 @@ const CustomHeader = () => {
             My Profile
           </Button>
 
-          <Button 
-            type="text" 
+          <Button
+            type="text"
             icon={<SettingOutlined />}
-            block 
-            style={{ 
+            block
+            style={{
               textAlign: 'left',
               height: 40,
               color: currentTheme.textPrimary,
@@ -189,10 +189,10 @@ const CustomHeader = () => {
 
         <Divider style={{ margin: 0, borderColor: currentTheme.border }} />
 
-        <Button 
-          type="text" 
+        <Button
+          type="text"
           icon={<LogoutOutlined />}
-          block 
+          block
           danger
           style={{ height: 40, textAlign: 'left' }}
           onClick={handleLogout}
@@ -214,9 +214,9 @@ const CustomHeader = () => {
         padding: 0
       }}
     >
-      <Flex justify="space-between" align="center" style={{ 
-        padding: '16px', 
-        borderBottom: `1px solid ${currentTheme.border}` 
+      <Flex justify="space-between" align="center" style={{
+        padding: '16px',
+        borderBottom: `1px solid ${currentTheme.border}`
       }}>
         <Text strong style={{ color: currentTheme.textPrimary, fontSize: 16 }}>
           Notifications
@@ -256,9 +256,9 @@ const CustomHeader = () => {
               <List.Item.Meta
                 avatar={
                   <Badge dot color={item.status === 'urgent' ? 'red' : 'blue'}>
-                    <Avatar 
-                      size={40} 
-                      style={{ 
+                    <Avatar
+                      size={40}
+                      style={{
                         backgroundColor: currentTheme.avatarBg,
                         color: currentTheme.primary
                       }}
@@ -278,8 +278,8 @@ const CustomHeader = () => {
                   </Flex>
                 }
                 description={
-                  <Text 
-                    style={{ 
+                  <Text
+                    style={{
                       color: currentTheme.textSecondary,
                       fontSize: 13,
                     }}
@@ -319,18 +319,18 @@ const CustomHeader = () => {
         {/* Left Section - Logo & Company Switcher */}
         <Flex align="center" gap={24}>
           <Flex align="center">
-            <img 
-              src={AnyNamecrm} 
-              alt="Company Logo" 
-              style={{ 
+            <img
+              src={AnyNamecrm}
+              alt="Company Logo"
+              style={{
                 height: 32,
                 marginRight: 12,
                 filter: theme === 'dark' ? 'brightness(0) invert(1)' : 'none'
-              }} 
+              }}
             />
-            <h1 style={{ 
-              margin: 0, 
-              color: currentTheme.textPrimary, 
+            <h1 style={{
+              margin: 0,
+              color: currentTheme.textPrimary,
               fontSize: 20,
               fontWeight: '600',
               filter: theme === 'dark' ? 'brightness(0) invert(1)' : 'none'
@@ -345,7 +345,7 @@ const CustomHeader = () => {
               value={currentCompany?.id}
               onChange={(companyId) => switchCompany(companyId)}
               loading={companyLoading}
-              style={{ 
+              style={{
                 minWidth: 200,
                 color: currentTheme.textPrimary
               }}
@@ -460,8 +460,8 @@ const CustomHeader = () => {
         onCancel={() => setIsHelpModalOpen(false)}
         footer={null}
         width={600}
-        styles={{ 
-          body: { 
+        styles={{
+          body: {
             padding: 24,
             backgroundColor: currentTheme.cardBg,
           }
@@ -480,14 +480,14 @@ const CustomHeader = () => {
           <Divider style={{ margin: 0, borderColor: currentTheme.border }} />
 
           <Flex vertical gap={16}>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               block
               onClick={() => window.open('https://help.comunikcrm.com/docs', '_blank')}
             >
               View Documentation
             </Button>
-            <Button 
+            <Button
               block
               onClick={() => window.open('mailto:support@comunikcrm.com')}
             >
@@ -504,8 +504,8 @@ const CustomHeader = () => {
         onCancel={() => setPopupVisible(false)}
         footer={null}
         width={600}
-        styles={{ 
-          body: { 
+        styles={{
+          body: {
             padding: 24,
             backgroundColor: currentTheme.cardBg,
           }
@@ -542,8 +542,8 @@ const CustomHeader = () => {
               {popupEvent.users?.length > 0 ? (
                 <Flex gap={8} wrap="wrap">
                   {popupEvent.users.map(user => (
-                    <Flex 
-                      key={user.id} 
+                    <Flex
+                      key={user.id}
                       align="center"
                       style={{
                         padding: '4px 12px',
@@ -552,10 +552,10 @@ const CustomHeader = () => {
                         border: `1px solid ${currentTheme.border}`
                       }}
                     >
-                      <Avatar 
-                        size={24} 
+                      <Avatar
+                        size={24}
                         src={user.avatar}
-                        style={{ 
+                        style={{
                           marginRight: 8,
                           backgroundColor: currentTheme.primary,
                           color: '#fff'

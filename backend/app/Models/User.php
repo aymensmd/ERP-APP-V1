@@ -10,8 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
-use App\Traits\HasHierarchy;
+    use HasApiTokens, HasFactory, Notifiable, \App\Traits\HasHierarchy;
 
     /**
      * The attributes that are mass assignable.
@@ -41,6 +40,7 @@ use App\Traits\HasHierarchy;
         'emergency_contact_name',
         'emergency_contact_phone',
         'emergency_contact_relation',
+        'is_platform_admin',
     ];
 
     /**
@@ -165,6 +165,11 @@ use App\Traits\HasHierarchy;
             return false;
         }
 
+        // Platform Admin has global access
+        if ($this->is_platform_admin) {
+            return true;
+        }
+
         // Check if user is admin (role_id === 1 in company_user)
         $companyUser = \DB::table('company_user')
             ->where('user_id', $this->id)
@@ -206,9 +211,15 @@ use App\Traits\HasHierarchy;
             $companyId = request()->attributes->get('current_company_id') ?? session('current_company_id');
         }
 
+        // Platform Admin is admin everywhere
+        if ($this->is_platform_admin) {
+            return true;
+        }
+
         if (!$companyId) {
             return $this->role_id === 1; // Fallback to global role
         }
+
 
         $companyUser = \DB::table('company_user')
             ->where('user_id', $this->id)
@@ -283,7 +294,7 @@ use App\Traits\HasHierarchy;
      */
     public function isAdmin()
     {
-        return $this->role_id === 1;
+        return $this->is_platform_admin || $this->role_id === 1;
     }
 
     /**
@@ -305,6 +316,11 @@ use App\Traits\HasHierarchy;
 
         if (!$companyId) {
             return null;
+        }
+
+        // Platform Admin has company scope for everything (effectively global within company context)
+        if ($this->is_platform_admin) {
+            return 'company';
         }
 
         // Admin has company scope for everything

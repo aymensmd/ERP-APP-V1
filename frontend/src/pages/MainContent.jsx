@@ -135,20 +135,20 @@ const MainContent = () => {
       <div style={{ flex: 1, padding: '0 16px' }}>
         <Banner />
         <Divider style={{ margin: '16px 0', borderColor: colors.border }} />
-        
-        <Card 
+
+        <Card
+          className="glass-card"
           variant="outlined"
-          style={{ 
-            borderRadius: '8px', 
-            boxShadow: colors.cardShadow,
-            background: colors.cardBg, 
-            borderColor: colors.border,
+          style={{
+            borderRadius: '16px',
+            border: 'none',
+            background: 'rgba(255, 255, 255, 0.6)',
             height: '100%',
             display: 'flex',
             flexDirection: 'column'
           }}
-          styles={{ 
-            body: { 
+          styles={{
+            body: {
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
@@ -156,35 +156,35 @@ const MainContent = () => {
             }
           }}
         >
-          <div style={{ 
+          <div style={{
             padding: '16px 24px',
             borderBottom: `1px solid ${colors.border}`
           }}>
-            <Text strong style={{ 
-              color: colors.primary, 
-              fontSize: 16 
+            <Text strong style={{
+              color: colors.primary,
+              fontSize: 16
             }}>
               Recent Notifications
             </Text>
           </div>
-          
-          <div style={{ 
-            padding: '16px 24px', 
+
+          <div style={{
+            padding: '16px 24px',
             flex: 1,
             overflow: 'auto',
             minHeight: '400px'
           }}>
             {loading ? (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                height: '100%' 
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%'
               }}>
                 <Spin size="large" />
               </div>
             ) : (
-              <div style={{ 
+              <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                 gap: '16px',
@@ -197,40 +197,38 @@ const MainContent = () => {
                       key={event.id}
                       hoverable
                       onClick={() => openModal(event)}
-                      style={{ 
+                      className="glass-card"
+                      style={{
                         transition: 'all 0.3s',
-                        borderColor: colors.border,
+                        border: 'none',
+                        background: 'rgba(255, 255, 255, 0.5)',
                         height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
-                        ':hover': {
-                          boxShadow: colors.cardHoverShadow,
-                          transform: 'translateY(-2px)'
-                        }
                       }}
-                      styles={{ 
-                        header: { 
-                          background: theme === 'dark' ? '#141414' : '#f0f5ff', 
-                          borderRadius: '7px 7px 0 0', 
+                      styles={{
+                        header: {
+                          background: 'rgba(255, 255, 255, 0.3)',
+                          borderRadius: '16px 16px 0 0',
                           padding: '12px 16px',
-                          borderBottomColor: colors.border
-                        }, 
-                        body: { 
-                          padding: '16px', 
+                          borderBottom: '1px solid rgba(0,0,0,0.05)'
+                        },
+                        body: {
+                          padding: '16px',
                           flex: 1,
                           display: 'flex',
                           flexDirection: 'column'
-                        } 
+                        }
                       }}
                       title={
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
                           alignItems: 'center',
                           overflow: 'hidden'
                         }}>
-                          <Text strong ellipsis style={{ 
-                            maxWidth: '180px', 
+                          <Text strong ellipsis style={{
+                            maxWidth: '180px',
                             color: colors.textPrimary,
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
@@ -254,24 +252,24 @@ const MainContent = () => {
                         </div>
                       }
                     >
-                      <div style={{ 
-                        display: 'flex', 
+                      <div style={{
+                        display: 'flex',
                         flexDirection: 'column',
                         flex: 1,
                         gap: '12px'
                       }}>
-                        <div style={{ 
-                          fontSize: 13, 
+                        <div style={{
+                          fontSize: 13,
                           color: colors.textSecondary
                         }}>
                           <Text type="secondary">Date: </Text>
                           {event.start_date}
                         </div>
-                        
-                        <div style={{ 
-                          fontSize: 13, 
+
+                        <div style={{
+                          fontSize: 13,
                           color: colors.textSecondary,
-                          flex: 1 
+                          flex: 1
                         }}>
                           <Text type="secondary">Description: </Text>
                           <Text style={{ display: 'inline' }}>
@@ -280,43 +278,43 @@ const MainContent = () => {
                               : event.description}
                           </Text>
                         </div>
-                        
+
                         <div>
-                          <Text type="secondary" style={{ 
-                            fontSize: 13, 
+                          <Text type="secondary" style={{
+                            fontSize: 13,
                             display: 'block',
-                            marginBottom: 8 
+                            marginBottom: 8
                           }}>
                             Users Assigned:
                           </Text>
-                          <div style={{ 
-                            display: 'flex', 
-                            gap: 8, 
-                            flexWrap: 'wrap' 
+                          <div style={{
+                            display: 'flex',
+                            gap: 8,
+                            flexWrap: 'wrap'
                           }}>
                             {(event.users || event.participants || []).length > 0 ? (
                               (event.users || event.participants || []).map(user => (
-                                <div 
-                                  key={user.id} 
-                                  style={{ 
-                                    display: 'flex', 
+                                <div
+                                  key={user.id}
+                                  style={{
+                                    display: 'flex',
                                     alignItems: 'center',
                                     flexShrink: 0
                                   }}
                                 >
-                                  <Avatar 
-                                    size={24} 
-                                    src={user.avatar} 
-                                    style={{ 
-                                      marginRight: 4, 
-                                      background: theme === 'dark' ? '#1a1a1a' : '#e6f0ff', 
-                                      color: colors.primary 
+                                  <Avatar
+                                    size={24}
+                                    src={user.avatar}
+                                    style={{
+                                      marginRight: 4,
+                                      background: theme === 'dark' ? '#1a1a1a' : '#e6f0ff',
+                                      color: colors.primary
                                     }}
                                   >
                                     {user.name ? user.name.charAt(0) : '?'}
                                   </Avatar>
-                                  <Text style={{ 
-                                    fontSize: 12, 
+                                  <Text style={{
+                                    fontSize: 12,
                                     color: colors.textSecondary,
                                     maxWidth: '80px',
                                     whiteSpace: 'nowrap',
@@ -341,20 +339,20 @@ const MainContent = () => {
               </div>
             )}
           </div>
-          
+
           {/* Pagination Controls */}
           {!loading && totalPages > 1 && (
-            <div style={{ 
+            <div style={{
               padding: '16px 24px',
               borderTop: `1px solid ${colors.border}`,
-              display: 'flex', 
-              justifyContent: 'center', 
+              display: 'flex',
+              justifyContent: 'center',
               alignItems: 'center'
             }}>
-              <button 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
-                disabled={currentPage === 1} 
-                style={{ 
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                style={{
                   padding: '4px 12px',
                   marginRight: 8,
                   color: colors.textPrimary,
@@ -395,10 +393,10 @@ const MainContent = () => {
                   {i + 1}
                 </button>
               ))}
-              <button 
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
-                disabled={currentPage === totalPages} 
-                style={{ 
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                style={{
                   padding: '4px 12px',
                   marginLeft: 8,
                   color: colors.textPrimary,
@@ -430,10 +428,10 @@ const MainContent = () => {
           open={modalVisible}
           onCancel={closeModal}
           footer={null}
-          styles={{ 
-            body: { 
-              background: colors.modalBg, 
-              padding: 24 
+          styles={{
+            body: {
+              background: colors.modalBg,
+              padding: 24
             },
             header: {
               background: colors.modalBg,
@@ -455,26 +453,26 @@ const MainContent = () => {
                   {selectedEvent.end_date && ` to ${selectedEvent.end_date}`}
                 </Text>
               </div>
-              
+
               <div style={{ marginBottom: 16 }}>
                 <Text strong style={{ color: colors.primary }}>Description: </Text>
                 <Text style={{ color: colors.textPrimary }}>
                   {selectedEvent.description}
                 </Text>
               </div>
-              
-              <Divider style={{ 
-                margin: '16px 0', 
-                borderColor: colors.border 
+
+              <Divider style={{
+                margin: '16px 0',
+                borderColor: colors.border
               }} />
-              
+
               <div style={{ marginBottom: 8 }}>
                 <Text strong style={{ color: colors.primary }}>Users Assigned: </Text>
               </div>
-              
-              <div style={{ 
-                display: 'flex', 
-                flexWrap: 'wrap', 
+
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
                 gap: 12,
                 maxHeight: '300px',
                 overflowY: 'auto',
@@ -482,34 +480,34 @@ const MainContent = () => {
               }}>
                 {(selectedEvent.users || selectedEvent.participants || []).length > 0 ? (
                   (selectedEvent.users || selectedEvent.participants || []).map(user => (
-                    <div 
-                      key={user.id} 
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        background: theme === 'dark' ? '#141414' : '#f0f5ff', 
-                        borderRadius: 6, 
-                        padding: '8px 12px', 
+                    <div
+                      key={user.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        background: theme === 'dark' ? '#141414' : '#f0f5ff',
+                        borderRadius: 6,
+                        padding: '8px 12px',
                         width: 'calc(50% - 6px)',
                         boxSizing: 'border-box'
                       }}
                     >
-                      <Avatar 
-                        size={32} 
-                        src={user.avatar} 
-                        style={{ 
-                          marginRight: 12, 
-                          background: theme === 'dark' ? '#1a1a1a' : '#fff', 
-                          color: colors.primary, 
-                          fontWeight: 600 
+                      <Avatar
+                        size={32}
+                        src={user.avatar}
+                        style={{
+                          marginRight: 12,
+                          background: theme === 'dark' ? '#1a1a1a' : '#fff',
+                          color: colors.primary,
+                          fontWeight: 600
                         }}
                       >
                         {user.name ? user.name.charAt(0) : '?'}
                       </Avatar>
                       <div>
-                        <Text strong style={{ 
-                          display: 'block', 
-                          color: colors.textPrimary 
+                        <Text strong style={{
+                          display: 'block',
+                          color: colors.textPrimary
                         }}>
                           {user.name}
                         </Text>

@@ -9,8 +9,7 @@ use App\Traits\Auditable;
 
 class Vacation extends Model
 {
-    use HasFactory, HasCompany, Auditable;
-use App\Traits\HasAuthorization;
+    use HasFactory, HasCompany, Auditable, \App\Traits\HasAuthorization;
 
     protected $fillable = [
         'user_id',

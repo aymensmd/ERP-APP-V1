@@ -20,6 +20,10 @@ import {
   Typography,
   Descriptions,
   Tabs,
+  Avatar,
+  Tooltip,
+  Dropdown,
+  Badge,
 } from 'antd';
 import {
   PlusOutlined,
@@ -32,9 +36,15 @@ import {
   ClockCircleOutlined,
   CloseCircleOutlined,
   SendOutlined,
+  UserOutlined,
+  PrinterOutlined,
+  DownloadOutlined,
+  MoreOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import axios from '../axios';
 import { useCompany } from '../contexts/CompanyContext';
+import { useStateContext } from '../contexts/ContextProvider';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
@@ -58,6 +68,7 @@ const Invoices = () => {
   });
   const [form] = Form.useForm();
   const { currentCompany } = useCompany();
+  const { theme } = useStateContext();
 
   useEffect(() => {
     if (currentCompany) {
@@ -90,7 +101,7 @@ const Invoices = () => {
     try {
       const response = await axios.get('/invoices');
       const data = response.data.data || response.data || [];
-      
+
       const total = data.length;
       const paid = data.filter(i => i.status === 'paid').length;
       const overdue = data.filter(i => {
@@ -222,7 +233,7 @@ const Invoices = () => {
       const response = await axios.get(`/invoices/${invoice.id}/pdf`, {
         responseType: 'blob',
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -230,7 +241,7 @@ const Invoices = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       message.success('PDF generated successfully');
     } catch (error) {
       message.warning('PDF generation not yet implemented. Showing invoice details instead.');
@@ -265,62 +276,58 @@ const Invoices = () => {
       title: 'Invoice #',
       dataIndex: 'invoice_number',
       key: 'invoice_number',
-      render: (text) => <Text strong>{text}</Text>,
+      render: (text) => (
+        <Space>
+          <FileTextOutlined style={{ color: '#4f46e5' }} />
+          <Text strong>{text}</Text>
+        </Space>
+      ),
     },
     {
       title: 'Customer',
       key: 'customer',
       render: (_, record) => {
-        if (record.customer) {
-          return `${record.customer.first_name || ''} ${record.customer.last_name || ''}`.trim() || record.customer.company_name || 'N/A';
-        }
-        if (record.lead) {
-          return `${record.lead.first_name || ''} ${record.lead.last_name || ''}`.trim() || record.lead.company_name || 'N/A';
-        }
-        return 'N/A';
+        const name = record.customer
+          ? `${record.customer.first_name || ''} ${record.customer.last_name || ''}`.trim() || record.customer.company_name
+          : record.lead
+            ? `${record.lead.first_name || ''} ${record.lead.last_name || ''}`.trim() || record.lead.company_name
+            : 'N/A';
+        return (
+          <Space>
+            <Avatar size="small" icon={<UserOutlined />} />
+            <Text>{name}</Text>
+          </Space>
+        );
       },
     },
     {
-      title: 'Issue Date',
-      dataIndex: 'issue_date',
-      key: 'issue_date',
-      render: (date) => date ? dayjs(date).format('MMM DD, YYYY') : '-',
-    },
-    {
-      title: 'Due Date',
-      dataIndex: 'due_date',
-      key: 'due_date',
-      render: (date) => date ? dayjs(date).format('MMM DD, YYYY') : '-',
-    },
-    {
-      title: 'Total Amount',
-      dataIndex: 'total_amount',
-      key: 'total_amount',
-      render: (amount, record) => (
-        <Text strong>
-          {record.currency || 'USD'} {parseFloat(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </Text>
+      title: 'Dates',
+      key: 'dates',
+      render: (_, record) => (
+        <div>
+          <div style={{ fontSize: 12 }}>Issue: {record.issue_date ? dayjs(record.issue_date).format('MMM DD, YYYY') : '-'}</div>
+          <div style={{ fontSize: 12, color: dayjs(record.due_date).isBefore(dayjs()) && record.status !== 'paid' ? '#ef4444' : '#8c8c8c' }}>
+            Due: {record.due_date ? dayjs(record.due_date).format('MMM DD, YYYY') : '-'}
+          </div>
+        </div>
       ),
     },
     {
-      title: 'Balance',
-      dataIndex: 'balance',
-      key: 'balance',
-      render: (balance, record) => {
-        const bal = parseFloat(balance || record.total_amount || 0);
-        return (
-          <Text type={bal > 0 ? 'danger' : 'success'}>
-            {record.currency || 'USD'} {bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </Text>
-        );
-      },
+      title: 'Amount',
+      dataIndex: 'total_amount',
+      key: 'total_amount',
+      render: (amount, record) => (
+        <Text strong style={{ color: '#10b981' }}>
+          {record.currency || 'USD'} {parseFloat(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+        </Text>
+      ),
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
+        <Tag color={getStatusColor(status)} icon={getStatusIcon(status)} style={{ borderRadius: 6, fontSize: 10 }}>
           {status?.toUpperCase()}
         </Tag>
       ),
@@ -330,34 +337,32 @@ const Invoices = () => {
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Button
-            type="link"
-            icon={<EyeOutlined />}
-            onClick={() => handleView(record)}
-          >
-            View
-          </Button>
-          <Button
-            type="link"
-            icon={<FilePdfOutlined />}
-            onClick={() => handleGeneratePdf(record)}
-          >
-            PDF
-          </Button>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            Edit
-          </Button>
+          <Tooltip title="View">
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => handleView(record)}
+            />
+          </Tooltip>
+          <Tooltip title="PDF">
+            <Button
+              type="text"
+              icon={<DownloadOutlined />}
+              onClick={() => handleGeneratePdf(record)}
+            />
+          </Tooltip>
+          <Tooltip title="Edit">
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
           <Popconfirm
-            title="Are you sure you want to delete this invoice?"
+            title="Delete invoice?"
             onConfirm={() => handleDelete(record.id)}
           >
-            <Button type="link" danger icon={<DeleteOutlined />}>
-              Delete
-            </Button>
+            <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       ),
@@ -365,85 +370,105 @@ const Invoices = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Card>
-        <Row gutter={16} style={{ marginBottom: 24 }}>
-          <Col span={6}>
+    <div className="page-container">
+      <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <Title level={2} className="text-gradient" style={{ marginBottom: 4 }}>Invoices</Title>
+          <Text type="secondary">Manage customer billing and track payments.</Text>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          size="large"
+          style={{ borderRadius: 10, background: 'var(--primary-gradient)', border: 'none' }}
+          onClick={handleCreate}
+        >
+          Create Invoice
+        </Button>
+      </div>
+
+      <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
+        <Col xs={24} sm={8} md={6}>
+          <Card className="glass-card" bodyStyle={{ padding: 20 }}>
             <Statistic
-              title="Total Invoices"
-              value={stats.total || 0}
-              prefix={<DollarOutlined />}
+              title={<Text type="secondary">Total Revenue</Text>}
+              value={stats.totalAmount || 0}
+              precision={2}
+              prefix={<DollarOutlined style={{ color: '#4f46e5' }} />}
             />
-          </Col>
-          <Col span={6}>
+          </Card>
+        </Col>
+        <Col xs={24} sm={8} md={6}>
+          <Card className="glass-card" bodyStyle={{ padding: 20 }}>
             <Statistic
-              title="Paid"
-              value={stats.paid || 0}
-              valueStyle={{ color: '#3f8600' }}
+              title={<Text type="secondary">Paid Amount</Text>}
+              value={stats.paidAmount || 0}
+              precision={2}
+              valueStyle={{ color: '#10b981' }}
               prefix={<CheckCircleOutlined />}
             />
-          </Col>
-          <Col span={6}>
+          </Card>
+        </Col>
+        <Col xs={24} sm={8} md={6}>
+          <Card className="glass-card" bodyStyle={{ padding: 20 }}>
             <Statistic
-              title="Overdue"
-              value={stats.overdue || 0}
-              valueStyle={{ color: '#cf1322' }}
-              prefix={<CloseCircleOutlined />}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="Pending Amount"
+              title={<Text type="secondary">Pending Amount</Text>}
               value={stats.pendingAmount || 0}
               precision={2}
-              prefix={<DollarOutlined />}
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: '#ef4444' }}
+              prefix={<ClockCircleOutlined />}
             />
-          </Col>
-        </Row>
+          </Card>
+        </Col>
+        <Col xs={24} sm={8} md={6}>
+          <Card className="glass-card" bodyStyle={{ padding: 20 }}>
+            <Statistic
+              title={<Text type="secondary">Invoices Count</Text>}
+              value={stats.total || 0}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-        <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
-          <Space>
-            <Input
-              placeholder="Search invoices..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              style={{ width: 250 }}
-              allowClear
-            />
-            <Select
-              placeholder="Filter by Status"
-              value={filters.status}
-              onChange={(value) => setFilters({ ...filters, status: value })}
-              style={{ width: 150 }}
-              allowClear
-            >
-              <Option value="draft">Draft</Option>
-              <Option value="sent">Sent</Option>
-              <Option value="paid">Paid</Option>
-              <Option value="overdue">Overdue</Option>
-              <Option value="cancelled">Cancelled</Option>
-            </Select>
-            <Select
-              placeholder="Filter by Customer"
-              value={filters.customer_id}
-              onChange={(value) => setFilters({ ...filters, customer_id: value })}
-              style={{ width: 200 }}
-              allowClear
-              showSearch
-              optionFilterProp="children"
-            >
-              {customers.map((customer) => (
-                <Option key={customer.id} value={customer.id}>
-                  {`${customer.first_name || ''} ${customer.last_name || ''}`.trim() || customer.company_name}
-                </Option>
-              ))}
-            </Select>
-          </Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            Create Invoice
-          </Button>
-        </Space>
+      <Card className="glass-card" bodyStyle={{ padding: 24 }}>
+        <div style={{ marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Input
+            placeholder="Search invoices..."
+            prefix={<EyeOutlined style={{ color: '#bfbfbf' }} />}
+            value={filters.search}
+            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            style={{ width: 300, borderRadius: 8 }}
+            allowClear
+          />
+          <Select
+            placeholder="Status"
+            value={filters.status}
+            onChange={(value) => setFilters({ ...filters, status: value })}
+            style={{ width: 150 }}
+            allowClear
+          >
+            <Option value="draft">Draft</Option>
+            <Option value="sent">Sent</Option>
+            <Option value="paid">Paid</Option>
+            <Option value="overdue">Overdue</Option>
+            <Option value="cancelled">Cancelled</Option>
+          </Select>
+          <Select
+            placeholder="Customer"
+            value={filters.customer_id}
+            onChange={(value) => setFilters({ ...filters, customer_id: value })}
+            style={{ width: 200 }}
+            allowClear
+            showSearch
+            optionFilterProp="children"
+          >
+            {customers.map((c) => (
+              <Option key={c.id} value={c.id}>
+                {`${c.first_name || ''} ${c.last_name || ''}`.trim() || c.company_name}
+              </Option>
+            ))}
+          </Select>
+        </div>
 
         <Table
           columns={columns}
@@ -451,6 +476,7 @@ const Invoices = () => {
           loading={loading}
           rowKey="id"
           pagination={{ pageSize: 15 }}
+          className="premium-table"
         />
       </Card>
 
@@ -461,7 +487,8 @@ const Invoices = () => {
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
         width={800}
-        okText="Save"
+        okText="Save Invoice"
+        className="premium-modal"
       >
         <Form
           form={form}
@@ -470,38 +497,22 @@ const Invoices = () => {
         >
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="customer_id"
-                label="Customer"
-              >
-                <Select
-                  placeholder="Select Customer"
-                  allowClear
-                  showSearch
-                  optionFilterProp="children"
-                >
-                  {customers.map((customer) => (
-                    <Option key={customer.id} value={customer.id}>
-                      {`${customer.first_name || ''} ${customer.last_name || ''}`.trim() || customer.company_name}
+              <Form.Item name="customer_id" label="Customer">
+                <Select placeholder="Select Customer" allowClear showSearch optionFilterProp="children">
+                  {customers.map((c) => (
+                    <Option key={c.id} value={c.id}>
+                      {`${c.first_name || ''} ${c.last_name || ''}`.trim() || c.company_name}
                     </Option>
                   ))}
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="lead_id"
-                label="Lead (Optional)"
-              >
-                <Select
-                  placeholder="Select Lead"
-                  allowClear
-                  showSearch
-                  optionFilterProp="children"
-                >
-                  {leads.map((lead) => (
-                    <Option key={lead.id} value={lead.id}>
-                      {`${lead.first_name || ''} ${lead.last_name || ''}`.trim() || lead.company_name}
+              <Form.Item name="lead_id" label="Lead (Optional)">
+                <Select placeholder="Select Lead" allowClear showSearch optionFilterProp="children">
+                  {leads.map((l) => (
+                    <Option key={l.id} value={l.id}>
+                      {`${l.first_name || ''} ${l.last_name || ''}`.trim() || l.company_name}
                     </Option>
                   ))}
                 </Select>
@@ -511,318 +522,165 @@ const Invoices = () => {
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item
-                name="issue_date"
-                label="Issue Date"
-                rules={[{ required: true, message: 'Please select issue date' }]}
-              >
+              <Form.Item name="issue_date" label="Issue Date" rules={[{ required: true }]}>
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item
-                name="due_date"
-                label="Due Date"
-                rules={[{ required: true, message: 'Please select due date' }]}
-              >
+              <Form.Item name="due_date" label="Due Date" rules={[{ required: true }]}>
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item
-                name="currency"
-                label="Currency"
-                initialValue="USD"
-              >
+              <Form.Item name="currency" label="Currency" initialValue="USD">
                 <Select>
                   <Option value="USD">USD</Option>
                   <Option value="EUR">EUR</Option>
-                  <Option value="GBP">GBP</Option>
                   <Option value="MAD">MAD</Option>
-                  <Option value="AED">AED</Option>
                 </Select>
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider>Invoice Items</Divider>
+          <Divider orientation="left">Items</Divider>
           <Form.List name="items">
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }) => (
                   <Row key={key} gutter={8} style={{ marginBottom: 8 }}>
-                    <Col span={8}>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'description']}
-                        rules={[{ required: true, message: 'Description required' }]}
-                      >
+                    <Col span={10}>
+                      <Form.Item {...restField} name={[name, 'description']} rules={[{ required: true }]}>
                         <Input placeholder="Description" />
                       </Form.Item>
                     </Col>
                     <Col span={4}>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'quantity']}
-                        rules={[{ required: true, message: 'Qty' }]}
-                      >
+                      <Form.Item {...restField} name={[name, 'quantity']} rules={[{ required: true }]}>
                         <InputNumber min={1} placeholder="Qty" style={{ width: '100%' }} />
                       </Form.Item>
                     </Col>
+                    <Col span={6}>
+                      <Form.Item {...restField} name={[name, 'unit_price']} rules={[{ required: true }]}>
+                        <InputNumber min={0} placeholder="Price" style={{ width: '100%' }} prefix="$" />
+                      </Form.Item>
+                    </Col>
                     <Col span={4}>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'unit_price']}
-                        rules={[{ required: true, message: 'Price' }]}
-                      >
-                        <InputNumber min={0} placeholder="Price" style={{ width: '100%' }} />
-                      </Form.Item>
-                    </Col>
-                    <Col span={3}>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'tax_rate']}
-                      >
-                        <InputNumber min={0} max={100} placeholder="Tax %" style={{ width: '100%' }} />
-                      </Form.Item>
-                    </Col>
-                    <Col span={3}>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'discount_rate']}
-                      >
-                        <InputNumber min={0} max={100} placeholder="Disc %" style={{ width: '100%' }} />
-                      </Form.Item>
-                    </Col>
-                    <Col span={2}>
-                      <Button
-                        type="link"
-                        danger
-                        onClick={() => remove(name)}
-                        disabled={fields.length === 1}
-                      >
-                        Remove
-                      </Button>
+                      <Button type="text" danger icon={<DeleteOutlined />} onClick={() => remove(name)} />
                     </Col>
                   </Row>
                 ))}
-                <Button type="dashed" onClick={() => add()} block>
-                  Add Item
-                </Button>
+                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>Add Item</Button>
               </>
             )}
           </Form.List>
 
-          <Divider />
-
           <Form.Item name="notes" label="Notes">
             <TextArea rows={3} placeholder="Additional notes..." />
-          </Form.Item>
-
-          <Form.Item name="terms" label="Terms & Conditions">
-            <TextArea rows={3} placeholder="Payment terms and conditions..." />
           </Form.Item>
         </Form>
       </Modal>
 
       {/* Detail Modal */}
       <Modal
-        title={`Invoice ${selectedInvoice?.invoice_number || ''}`}
+        title={null}
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
-          <Button key="pdf" icon={<FilePdfOutlined />} onClick={() => handleGeneratePdf(selectedInvoice)}>
-            Generate PDF
-          </Button>,
-          selectedInvoice?.status !== 'paid' && (
-            <Button
-              key="mark-paid"
-              type="primary"
-              onClick={() => handleStatusChange(selectedInvoice, 'paid')}
-            >
-              Mark as Paid
-            </Button>
-          ),
-          selectedInvoice?.status === 'draft' && (
-            <Button
-              key="send"
-              onClick={() => handleStatusChange(selectedInvoice, 'sent')}
-            >
-              Send Invoice
-            </Button>
-          ),
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            Close
-          </Button>,
+          <Button key="pdf" icon={<PrinterOutlined />} onClick={() => window.print()}>Print</Button>,
+          <Button key="download" type="primary" icon={<DownloadOutlined />} style={{ background: 'var(--primary-gradient)', border: 'none' }} onClick={() => handleGeneratePdf(selectedInvoice)}>Download PDF</Button>,
+          <Button key="close" onClick={() => setDetailModalVisible(false)}>Close</Button>,
         ]}
-        width={900}
+        width={850}
+        className="premium-modal"
       >
         {selectedInvoice && (
-          <Tabs
-            items={[
-              {
-                key: 'details',
-                label: 'Details',
-                children: (
-                  <>
-                    <Descriptions bordered column={2}>
-                      <Descriptions.Item label="Invoice Number">
-                        {selectedInvoice.invoice_number}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Status">
-                        <Tag color={getStatusColor(selectedInvoice.status)}>
-                          {selectedInvoice.status?.toUpperCase()}
-                        </Tag>
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Customer">
-                        {selectedInvoice.customer
-                          ? `${selectedInvoice.customer.first_name || ''} ${selectedInvoice.customer.last_name || ''}`.trim() || selectedInvoice.customer.company_name
-                          : selectedInvoice.lead
-                          ? `${selectedInvoice.lead.first_name || ''} ${selectedInvoice.lead.last_name || ''}`.trim() || selectedInvoice.lead.company_name
-                          : 'N/A'}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Currency">
-                        {selectedInvoice.currency || 'USD'}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Issue Date">
-                        {selectedInvoice.issue_date ? dayjs(selectedInvoice.issue_date).format('MMM DD, YYYY') : '-'}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Due Date">
-                        {selectedInvoice.due_date ? dayjs(selectedInvoice.due_date).format('MMM DD, YYYY') : '-'}
-                      </Descriptions.Item>
-                    </Descriptions>
+          <div id="invoice-print-area" style={{ padding: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 40 }}>
+              <div>
+                <Title level={4} className="text-gradient" style={{ margin: 0 }}>INVOICE</Title>
+                <Text strong>#{selectedInvoice.invoice_number}</Text>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <Title level={4} style={{ margin: 0 }}>{currentCompany?.name}</Title>
+                <Text type="secondary">{currentCompany?.email}</Text>
+              </div>
+            </div>
 
-                    <Divider>Items</Divider>
-                    <Table
-                      dataSource={selectedInvoice.items || []}
-                      pagination={false}
-                      columns={[
-                        { title: 'Description', dataIndex: 'description', key: 'description' },
-                        { title: 'Quantity', dataIndex: 'quantity', key: 'quantity' },
-                        {
-                          title: 'Unit Price',
-                          dataIndex: 'unit_price',
-                          key: 'unit_price',
-                          render: (price) => parseFloat(price || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }),
-                        },
-                        {
-                          title: 'Tax Rate',
-                          dataIndex: 'tax_rate',
-                          key: 'tax_rate',
-                          render: (rate) => `${rate || 0}%`,
-                        },
-                        {
-                          title: 'Discount',
-                          dataIndex: 'discount_rate',
-                          key: 'discount_rate',
-                          render: (rate) => `${rate || 0}%`,
-                        },
-                        {
-                          title: 'Line Total',
-                          dataIndex: 'line_total',
-                          key: 'line_total',
-                          render: (total) => parseFloat(total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }),
-                        },
-                      ]}
-                      rowKey="id"
-                    />
+            <Row gutter={32} style={{ marginBottom: 40 }}>
+              <Col span={12}>
+                <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>BILLED TO</Text>
+                <Title level={5} style={{ margin: 0 }}>
+                  {selectedInvoice.customer
+                    ? `${selectedInvoice.customer.first_name || ''} ${selectedInvoice.customer.last_name || ''}`.trim() || selectedInvoice.customer.company_name
+                    : selectedInvoice.lead
+                      ? `${selectedInvoice.lead.first_name || ''} ${selectedInvoice.lead.last_name || ''}`.trim() || selectedInvoice.lead.company_name
+                      : 'N/A'}
+                </Title>
+                <Text type="secondary">{selectedInvoice.customer?.email || selectedInvoice.lead?.email}</Text>
+              </Col>
+              <Col span={12} style={{ textAlign: 'right' }}>
+                <Space direction="vertical" size={0}>
+                  <Text type="secondary">DATE: <Text strong>{dayjs(selectedInvoice.issue_date).format('MMM DD, YYYY')}</Text></Text>
+                  <Text type="secondary">DUE DATE: <Text strong>{dayjs(selectedInvoice.due_date).format('MMM DD, YYYY')}</Text></Text>
+                  <Text type="secondary">STATUS: <Tag color={getStatusColor(selectedInvoice.status)}>{selectedInvoice.status?.toUpperCase()}</Tag></Text>
+                </Space>
+              </Col>
+            </Row>
 
-                    <Divider>Summary</Divider>
-                    <Row gutter={16}>
-                      <Col span={12}>
-                        <Statistic title="Subtotal" value={selectedInvoice.subtotal || 0} precision={2} />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic title="Tax Amount" value={selectedInvoice.tax_amount || 0} precision={2} />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic title="Discount" value={selectedInvoice.discount_amount || 0} precision={2} />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic
-                          title="Total Amount"
-                          value={selectedInvoice.total_amount || 0}
-                          precision={2}
-                          valueStyle={{ color: '#1890ff', fontSize: 20 }}
-                        />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic title="Paid Amount" value={selectedInvoice.paid_amount || 0} precision={2} />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic
-                          title="Balance"
-                          value={selectedInvoice.balance || selectedInvoice.total_amount || 0}
-                          precision={2}
-                          valueStyle={{ color: parseFloat(selectedInvoice.balance || selectedInvoice.total_amount || 0) > 0 ? '#cf1322' : '#3f8600' }}
-                        />
-                      </Col>
-                    </Row>
+            <Table
+              dataSource={selectedInvoice.items || []}
+              pagination={false}
+              rowKey="id"
+              columns={[
+                { title: 'Description', dataIndex: 'description', key: 'description' },
+                { title: 'Qty', dataIndex: 'quantity', key: 'quantity', width: 80 },
+                { title: 'Unit Price', dataIndex: 'unit_price', key: 'unit_price', render: (v) => `$${v}`, width: 120 },
+                { title: 'Total', key: 'total', render: (_, r) => `$${(r.quantity * r.unit_price).toLocaleString()}`, align: 'right', width: 120 },
+              ]}
+              style={{ marginBottom: 32 }}
+            />
 
-                    {selectedInvoice.notes && (
-                      <>
-                        <Divider>Notes</Divider>
-                        <Text>{selectedInvoice.notes}</Text>
-                      </>
-                    )}
+            <Row justify="end">
+              <Col span={10}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text type="secondary">Subtotal:</Text>
+                  <Text strong>${parseFloat(selectedInvoice.subtotal || 0).toLocaleString()}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text type="secondary">Tax ({selectedInvoice.tax_rate || 0}%):</Text>
+                  <Text strong>${parseFloat(selectedInvoice.tax_amount || 0).toLocaleString()}</Text>
+                </div>
+                <Divider style={{ margin: '8px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Title level={4} style={{ margin: 0 }}>Total:</Title>
+                  <Title level={4} style={{ margin: 0, color: '#4f46e5' }}>
+                    {selectedInvoice.currency || 'USD'} {parseFloat(selectedInvoice.total_amount || 0).toLocaleString()}
+                  </Title>
+                </div>
+              </Col>
+            </Row>
 
-                    {selectedInvoice.terms && (
-                      <>
-                        <Divider>Terms & Conditions</Divider>
-                        <Text>{selectedInvoice.terms}</Text>
-                      </>
-                    )}
-                  </>
-                ),
-              },
-              {
-                key: 'payments',
-                label: 'Payments',
-                children: (
-                  <Table
-                    dataSource={selectedInvoice.payments || []}
-                    pagination={false}
-                    columns={[
-                      {
-                        title: 'Date',
-                        dataIndex: 'payment_date',
-                        key: 'payment_date',
-                        render: (date) => date ? dayjs(date).format('MMM DD, YYYY') : '-',
-                      },
-                      {
-                        title: 'Amount',
-                        dataIndex: 'amount',
-                        key: 'amount',
-                        render: (amount) => parseFloat(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }),
-                      },
-                      {
-                        title: 'Method',
-                        dataIndex: 'payment_method',
-                        key: 'payment_method',
-                      },
-                      {
-                        title: 'Reference',
-                        dataIndex: 'reference_number',
-                        key: 'reference_number',
-                      },
-                      {
-                        title: 'Recorded By',
-                        key: 'recorded_by',
-                        render: (_, record) => record.received_by?.name || '-',
-                      },
-                    ]}
-                    rowKey="id"
-                  />
-                ),
-              },
-            ]}
-          />
+            {selectedInvoice.notes && (
+              <div style={{ marginTop: 40 }}>
+                <Text strong>Notes:</Text>
+                <p style={{ color: '#8c8c8c' }}>{selectedInvoice.notes}</p>
+              </div>
+            )}
+          </div>
         )}
       </Modal>
+
+      <style>{`
+        .premium-table .ant-table { background: transparent !important; }
+        .premium-table .ant-table-thead > tr > th { background: rgba(0,0,0,0.02) !important; color: #8c8c8c !important; font-weight: 600 !important; font-size: 12px !important; text-transform: uppercase !important; border-bottom: 2px solid #f0f0f0 !important; }
+        .premium-table .ant-table-row:hover > td { background: rgba(79, 70, 229, 0.02) !important; }
+        @media print {
+            body * { visibility: hidden; }
+            #invoice-print-area, #invoice-print-area * { visibility: visible; }
+            #invoice-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+      `}</style>
     </div>
   );
 };
 
 export default Invoices;
-
-

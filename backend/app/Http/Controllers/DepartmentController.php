@@ -27,6 +27,9 @@ class DepartmentController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:departments',
             'description' => 'nullable|string',
+            'parent_id' => 'nullable|exists:departments,id',
+            'manager_id' => 'nullable|exists:users,id',
+            'order' => 'integer',
         ]);
 
         // Automatically set company_id from tenant context
@@ -56,6 +59,9 @@ class DepartmentController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:departments,slug,' . $department->id,
             'description' => 'nullable|string',
+            'parent_id' => 'nullable|exists:departments,id',
+            'manager_id' => 'nullable|exists:users,id',
+            'order' => 'integer',
         ]);
 
         $department->update($validated);
@@ -77,6 +83,23 @@ class DepartmentController extends Controller
         
         $department->delete();
         return response()->json(['message' => 'Department deleted successfully']);
+    }
+
+    /**
+     * Get department hierarchy tree.
+     */
+    public function tree(Request $request)
+    {
+        $companyId = $request->attributes->get('current_company_id');
+        $departments = Department::where('company_id', $companyId)
+            ->with(['children' => function($q) {
+                $q->orderBy('order');
+            }])
+            ->root() // Using the scopeRoot
+            ->orderBy('order')
+            ->get();
+            
+        return \App\Http\Resources\DepartmentResource::collection($departments);
     }
 }
 

@@ -36,7 +36,7 @@
 .water-blob-1 {
   width: 280px;
   height: 240px;
-  animation: 
+  animation:
     drift-1 24s infinite,
     morph-1 16s infinite;
   top: 15%;
@@ -46,7 +46,7 @@
 .water-blob-2 {
   width: 180px;
   height: 220px;
-  animation: 
+  animation:
     drift-2 28s infinite reverse,
     morph-2 14s infinite;
   top: 55%;
@@ -56,7 +56,7 @@
 .water-blob-3 {
   width: 320px;
   height: 260px;
-  animation: 
+  animation:
     drift-3 32s infinite,
     morph-3 18s infinite;
   top: 30%;
@@ -66,7 +66,7 @@
 .water-blob-4 {
   width: 150px;
   height: 190px;
-  animation: 
+  animation:
     drift-4 36s infinite reverse,
     morph-4 12s infinite;
   top: 65%;
@@ -75,56 +75,148 @@
 
 /* Faster Drifting Animations */
 @keyframes drift-1 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(50px, 40px) rotate(3deg); }
-  50% { transform: translate(30px, -60px) rotate(-4deg); }
-  75% { transform: translate(-70px, 30px) rotate(5deg); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(50px, 40px) rotate(3deg);
+  }
+
+  50% {
+    transform: translate(30px, -60px) rotate(-4deg);
+  }
+
+  75% {
+    transform: translate(-70px, 30px) rotate(5deg);
+  }
 }
 
 @keyframes drift-2 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-60px, 30px) rotate(-4deg); }
-  50% { transform: translate(40px, 50px) rotate(3deg); }
-  75% { transform: translate(30px, -40px) rotate(6deg); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(-60px, 30px) rotate(-4deg);
+  }
+
+  50% {
+    transform: translate(40px, 50px) rotate(3deg);
+  }
+
+  75% {
+    transform: translate(30px, -40px) rotate(6deg);
+  }
 }
 
 @keyframes drift-3 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(70px, -30px) rotate(5deg); }
-  50% { transform: translate(-40px, 50px) rotate(-3deg); }
-  75% { transform: translate(50px, 40px) rotate(4deg); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(70px, -30px) rotate(5deg);
+  }
+
+  50% {
+    transform: translate(-40px, 50px) rotate(-3deg);
+  }
+
+  75% {
+    transform: translate(50px, 40px) rotate(4deg);
+  }
 }
 
 @keyframes drift-4 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-40px, -50px) rotate(-3deg); }
-  50% { transform: translate(60px, 30px) rotate(4deg); }
-  75% { transform: translate(-30px, 60px) rotate(-5deg); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(-40px, -50px) rotate(-3deg);
+  }
+
+  50% {
+    transform: translate(60px, 30px) rotate(4deg);
+  }
+
+  75% {
+    transform: translate(-30px, 60px) rotate(-5deg);
+  }
 }
 
 /* Continuous Shape Morphing Animations */
 @keyframes morph-1 {
-  0%, 100% { border-radius: 43% 57% 52% 48% / 62% 37% 63% 38%; }
-  33% { border-radius: 60% 40% 55% 45% / 47% 62% 38% 53%; }
-  66% { border-radius: 38% 62% 45% 55% / 53% 38% 62% 47%; }
+
+  0%,
+  100% {
+    border-radius: 43% 57% 52% 48% / 62% 37% 63% 38%;
+  }
+
+  33% {
+    border-radius: 60% 40% 55% 45% / 47% 62% 38% 53%;
+  }
+
+  66% {
+    border-radius: 38% 62% 45% 55% / 53% 38% 62% 47%;
+  }
 }
 
 @keyframes morph-2 {
-  0%, 100% { border-radius: 60% 40% 39% 61% / 57% 45% 55% 43%; }
-  33% { border-radius: 45% 55% 62% 38% / 43% 57% 43% 57%; }
-  66% { border-radius: 55% 45% 38% 62% / 57% 43% 57% 43%; }
+
+  0%,
+  100% {
+    border-radius: 60% 40% 39% 61% / 57% 45% 55% 43%;
+  }
+
+  33% {
+    border-radius: 45% 55% 62% 38% / 43% 57% 43% 57%;
+  }
+
+  66% {
+    border-radius: 55% 45% 38% 62% / 57% 43% 57% 43%;
+  }
 }
 
 @keyframes morph-3 {
-  0%, 100% { border-radius: 52% 48% 57% 43% / 39% 63% 37% 61%; }
-  33% { border-radius: 48% 52% 61% 39% / 63% 37% 63% 37%; }
-  66% { border-radius: 57% 43% 39% 61% / 37% 63% 37% 63%; }
+
+  0%,
+  100% {
+    border-radius: 52% 48% 57% 43% / 39% 63% 37% 61%;
+  }
+
+  33% {
+    border-radius: 48% 52% 61% 39% / 63% 37% 63% 37%;
+  }
+
+  66% {
+    border-radius: 57% 43% 39% 61% / 37% 63% 37% 63%;
+  }
 }
 
 @keyframes morph-4 {
-  0%, 100% { border-radius: 48% 52% 45% 55% / 63% 37% 63% 37%; }
-  33% { border-radius: 52% 48% 37% 63% / 45% 55% 45% 55%; }
-  66% { border-radius: 45% 55% 63% 37% / 52% 48% 52% 48%; }
+
+  0%,
+  100% {
+    border-radius: 48% 52% 45% 55% / 63% 37% 63% 37%;
+  }
+
+  33% {
+    border-radius: 52% 48% 37% 63% / 45% 55% 45% 55%;
+  }
+
+  66% {
+    border-radius: 45% 55% 63% 37% / 52% 48% 52% 48%;
+  }
 }
 
 /* Enhanced Water Surface Effects */
@@ -157,8 +249,16 @@
 }
 
 @keyframes shine {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.9; transform: scale(1.1); }
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
 }
 
 /* Login Container Styles */
@@ -224,7 +324,7 @@
 .login-title {
   font-size: 1.75rem;
   font-weight: 600;
-  color: #1677ff;
+  color: var(--primary-color);
   margin-bottom: 0.5rem;
 }
 
@@ -251,7 +351,7 @@
 }
 
 .forgot-password {
-  color: #1677ff;
+  color: var(--primary-color);
   font-size: 0.9rem;
   transition: color 0.2s;
 }
@@ -266,7 +366,7 @@
   font-weight: 500;
   font-size: 1rem;
   border-radius: 8px;
-  background: #1677ff;
+  background: var(--primary-color);
   border: none;
   transition: all 0.2s;
 }
@@ -293,17 +393,17 @@
     min-width: auto;
     padding: 1rem;
   }
-  
+
   .animated-background {
     width: 100%;
     opacity: 0.5;
   }
-  
+
   .login-card {
     padding: 2rem;
     max-width: 100%;
   }
-  
+
   .login-title {
     font-size: 1.5rem;
   }
@@ -313,11 +413,11 @@
   .login-page {
     padding: 12px;
   }
-  
+
   .login-card {
     padding: 1.5rem;
   }
-  
+
   .login-logo {
     height: 48px;
   }
@@ -331,34 +431,34 @@
   .login-container {
     padding: 0.5rem;
   }
-  
+
   .login-card {
     padding: 1.5rem;
     border-radius: 16px;
   }
-  
+
   .login-header {
     margin-bottom: 1.5rem;
   }
-  
+
   .login-logo {
     height: 40px;
   }
-  
+
   .login-title {
     font-size: 1.25rem;
   }
-  
+
   .login-subtitle {
     font-size: 0.85rem;
   }
-  
+
   .login-options {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
   }
-  
+
   .login-button {
     height: 44px;
     font-size: 0.95rem;

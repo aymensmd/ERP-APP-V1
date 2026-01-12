@@ -16,6 +16,9 @@ class Department extends Model
         'slug',
         'description',
         'company_id',
+        'parent_id',
+        'manager_id',
+        'order',
     ];
 
     /**
@@ -25,6 +28,36 @@ class Department extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    /**
+     * Get variable sub-departments (children).
+     */
+    public function children()
+    {
+        return $this->hasMany(Department::class, 'parent_id')->with('children')->orderBy('order');
+    }
+
+    /**
+     * Get parent department.
+     */
+    public function parent()
+    {
+        return $this->belongsTo(Department::class, 'parent_id');
+    }
+
+    /**
+     * Get department head / manager.
+     */
+    public function head()
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    /**
+     * Scope to get only root departments (no parent).
+     */
+    public function scopeRoot($query)
+    {
+        return $query->whereNull('parent_id');
+    }
 }
-
-

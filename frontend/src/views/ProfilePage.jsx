@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Typography, Button, Row, Col, Menu, List, Spin, Empty, Modal, Upload, message, ConfigProvider } from 'antd';
-import { 
-  InfoCircleOutlined, 
-  HistoryOutlined, 
-  ClockCircleOutlined, 
-  UserOutlined, 
-  PhoneOutlined, 
-  HomeOutlined, 
-  MailOutlined, 
-  SafetyCertificateOutlined, 
-  HeartOutlined, 
-  CalendarTwoTone, 
-  EditOutlined, 
-  InboxOutlined, 
-  FilePdfOutlined, 
-  PlusOutlined 
+import { Card, Avatar, Form, Input, Typography, Button, Row, Col, Menu, List, Spin, Empty, Modal, Upload, message, ConfigProvider, Tooltip, Tag, Divider, Space } from 'antd';
+import {
+  InfoCircleOutlined,
+  HistoryOutlined,
+  ClockCircleOutlined,
+  UserOutlined,
+  PhoneOutlined,
+  HomeOutlined,
+  MailOutlined,
+  SafetyCertificateOutlined,
+  HeartOutlined,
+  CalendarTwoTone,
+  EditOutlined,
+  InboxOutlined,
+  FilePdfOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
 import axios from '../axios';
 import { useStateContext } from '../contexts/ContextProvider';
@@ -23,7 +23,7 @@ import EmployeeProfileTabs from '../components/EmployeeProfileTabs';
 const { Title, Text } = Typography;
 
 const ProfilePage = () => {
-  const { theme, user: contextUser } = useStateContext();
+  const { theme, user: contextUser, setUser } = useStateContext();
   const [activeTab, setActiveTab] = useState('information');
   const [eventHistory, setEventHistory] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -133,16 +133,58 @@ const ProfilePage = () => {
   }, [eventHistory]);
 
   const handleEditProfile = () => {
+    setEditForm({
+      name: contextUser?.name || '',
+      phone_number: contextUser?.phone_number || '',
+      address: contextUser?.adress || contextUser?.address || '',
+      social_situation: contextUser?.social_situation || '',
+      sos_number: contextUser?.sos_number || '',
+      quote: quote
+    });
     setIsModalVisible(true);
   };
 
-  const handleSaveProfile = () => {
-    setQuote(editableQuote);
-    setIsModalVisible(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    phone_number: '',
+    address: '',
+    social_situation: '',
+    sos_number: '',
+    quote: ''
+  });
+
+  const handleSaveProfile = async () => {
+    setLoadingUser(true);
+    try {
+      await axios.put(`/employees/${contextUser.id}`, {
+        name: editForm.name,
+        phone_number: editForm.phone_number,
+        address: editForm.address,
+        social_situation: editForm.social_situation,
+        sos_number: editForm.sos_number
+      });
+
+      setQuote(editForm.quote);
+      setUser({
+        ...contextUser,
+        name: editForm.name,
+        phone_number: editForm.phone_number,
+        adress: editForm.address,
+        social_situation: editForm.social_situation,
+        sos_number: editForm.sos_number
+      });
+
+      message.success('Profile updated successfully');
+      setIsModalVisible(false);
+    } catch (error) {
+      console.error('Update profile error:', error);
+      message.error('Failed to update profile');
+    } finally {
+      setLoadingUser(false);
+    }
   };
 
   const handleCancelEdit = () => {
-    setEditableQuote(quote);
     setIsModalVisible(false);
   };
 
@@ -158,13 +200,14 @@ const ProfilePage = () => {
         },
       }}
     >
-      <div style={{ 
-        padding: '32px', 
-        minHeight: 'calc(100vh - 64px)', 
+      <div style={{
+        padding: '32px',
+        minHeight: 'calc(100vh - 64px)',
         position: 'relative',
         maxWidth: '1400px',
         margin: '0 auto',
-        width: '100%'
+        width: '100%',
+        background: 'var(--bg-dashboard)'
       }}>
         {/* Upload Button */}
         <div style={{ position: 'absolute', top: 24, right: 32, zIndex: 10 }}>
@@ -192,14 +235,14 @@ const ProfilePage = () => {
           }}
         >
           <Card
-            style={{ 
-              background: colors.cardBg, 
-              border: `1px solid ${colors.border}`, 
-              borderRadius: 8, 
-              boxShadow: colors.boxShadow, 
-              textAlign: 'center', 
-              maxWidth: 320, 
-              margin: '0 auto' 
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 8,
+              boxShadow: colors.boxShadow,
+              textAlign: 'center',
+              maxWidth: 320,
+              margin: '0 auto'
             }}
             styles={{ body: { padding: 12 } }}
           >
@@ -217,13 +260,13 @@ const ProfilePage = () => {
               )}
             </Text>
             <div style={{ marginTop: 6 }}>
-              <Upload.Dragger 
-                {...uploadProps} 
-                style={{ 
-                  background: theme === 'dark' ? '#1a1a1a' : '#f0f5ff', 
-                  borderRadius: 6, 
-                  minHeight: 48, 
-                  padding: 4 
+              <Upload.Dragger
+                {...uploadProps}
+                style={{
+                  background: theme === 'dark' ? '#1a1a1a' : '#f0f5ff',
+                  borderRadius: 6,
+                  minHeight: 48,
+                  padding: 4
                 }}
               >
                 <p className="ant-upload-drag-icon" style={{ marginBottom: 2 }}>
@@ -247,431 +290,335 @@ const ProfilePage = () => {
         ) : (
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
-              <Card style={{ 
-                padding: '24px', 
-                background: colors.cardBg,
-                borderRadius: '16px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-                border: 'none'
-              }}>
-                <Card 
-                  style={{ 
-                    marginBottom: 24, 
-                    background: `linear-gradient(135deg, ${colors.primary}15 0%, ${colors.primary}05 100%)`, 
-                    border: `1px solid ${colors.border}`, 
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <Card className="glass-card" styles={{ body: { padding: '24px' } }}>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
                     <Avatar
-                      size={80}
+                      size={120}
                       src={contextUser?.avatar}
-                      style={{ 
-                        backgroundColor: colors.avatarBg, 
-                        fontSize: '32px', 
-                        transition: 'background 0.3s' 
+                      className="glass-card"
+                      style={{
+                        backgroundColor: 'rgba(255,255,255,0.1)',
+                        border: '3px solid rgba(255,255,255,0.2)',
+                        padding: 4
                       }}
                     >
                       {contextUser?.name ? contextUser.name.charAt(0).toUpperCase() : '?'}
                     </Avatar>
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Title level={2} style={{ margin: 0, fontSize: '2.2em', color: colors.textPrimary }}>
-                          {contextUser?.name || 'Name not provided'}
-                        </Title>
-                      </div>
-                      <Text type="secondary" style={{ color: colors.textSecondary }}>
-                        {typeof contextUser?.department === 'string' 
-                          ? contextUser.department 
-                          : (contextUser?.department?.name || 'Department not provided')}
-                      </Text>
-                    </div>
                   </div>
-                </Card>
-                <div style={{ margin: '18px 0 8px 0', display: 'flex', gap: 8 }}>
-                  <Button
-                    type="primary"
-                    icon={<EditOutlined />}
-                    onClick={handleEditProfile}
-                    style={{ fontWeight: 600, letterSpacing: 1 }}
-                    block
-                  >
-                    Edit Profile
-                  </Button>
+                  <Title level={2} className="text-gradient" style={{ marginTop: 16, marginBottom: 4 }}>
+                    {contextUser?.name || 'User Name'}
+                  </Title>
+                  <Text style={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>
+                    {typeof contextUser?.role === 'string' ? contextUser.role : (contextUser?.role?.name || 'Employee')}
+                  </Text>
+                  <Tag color="blue" style={{ marginTop: 8, borderRadius: 12 }}>
+                    {typeof contextUser?.department === 'string'
+                      ? contextUser.department
+                      : (contextUser?.department?.name || 'Department')}
+                  </Tag>
                 </div>
-                <Card 
-                  size="small" 
-                  style={{ 
-                    background: colors.successBg, 
-                    border: 'none', 
-                    marginBottom: 10 
-                  }}
+                <Button
+                  type="primary"
+                  icon={<EditOutlined />}
+                  onClick={handleEditProfile}
+                  style={{ marginBottom: 20, borderRadius: 8, fontWeight: 600 }}
+                  block
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <span style={{ color: colors.textPrimary }}>
-                      <CalendarTwoTone /> <b>Joined:</b> {contextUser?.created_at ? new Date(contextUser.created_at).toLocaleDateString() : 'N/A'}
-                    </span>
-                    <span style={{ color: colors.textPrimary }}>
-                      <ClockCircleOutlined /> <b>Last Login:</b> {contextUser?.last_login ? new Date(contextUser.last_login).toLocaleString() : 'N/A'}
-                    </span>
-                  </div>
+                  Edit Profile
+                </Button>
+
+                <Card size="small" style={{ background: 'rgba(255,255,255,0.05)', border: 'none', marginBottom: 12 }}>
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <div style={{ color: 'rgba(255,255,255,0.8)' }}>
+                      <CalendarTwoTone /> <b style={{ marginLeft: 8 }}>Joined:</b> {contextUser?.created_at ? new Date(contextUser.created_at).toLocaleDateString() : 'N/A'}
+                    </div>
+                    <div style={{ color: 'rgba(255,255,255,0.8)' }}>
+                      <ClockCircleOutlined /> <b style={{ marginLeft: 8 }}>Last Login:</b> {contextUser?.last_login ? new Date(contextUser.last_login).toLocaleString() : 'N/A'}
+                    </div>
+                  </Space>
                 </Card>
-                <Card 
-                  size="small" 
-                  style={{ 
-                    background: colors.infoBg, 
-                    border: 'none' 
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <span style={{ color: colors.textPrimary }}>
-                      <HistoryOutlined /> <b>Total Events:</b> {profileStats.totalEvents}
-                    </span>
-                    <span style={{ color: colors.textPrimary }}>
-                      <ClockCircleOutlined /> <b>Ongoing:</b> {profileStats.ongoingEvents}
-                    </span>
-                  </div>
+
+                <Card size="small" style={{ background: 'rgba(255,255,255,0.05)', border: 'none', marginBottom: 12 }}>
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <div style={{ color: 'rgba(255,255,255,0.8)' }}>
+                      <HistoryOutlined /> <b style={{ marginLeft: 8 }}>Total Events:</b> {profileStats.totalEvents}
+                    </div>
+                    <div style={{ color: 'rgba(255,255,255,0.8)' }}>
+                      <ClockCircleOutlined /> <b style={{ marginLeft: 8 }}>Ongoing:</b> {profileStats.ongoingEvents}
+                    </div>
+                  </Space>
                 </Card>
-                <Card 
-                  size="small" 
-                  style={{ 
-                    background: colors.warningBg, 
-                    border: 'none', 
-                    marginTop: 10 
-                  }}
-                >
-                  <Text italic style={{ color: colors.textPrimary }}>
+
+                <Card size="small" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', marginTop: 10 }}>
+                  <Text italic style={{ color: '#d4af37' }}>
                     "{quote}"
                   </Text>
                 </Card>
               </Card>
               <Modal
-                title="Edit Motivation Message"
+                title={<span className="text-gradient">Edit Profile</span>}
                 open={isModalVisible}
                 onOk={handleSaveProfile}
                 onCancel={handleCancelEdit}
-                okText="Save"
+                okText="Save Changes"
                 cancelText="Cancel"
-                styles={{
-                  body: {
-                    background: colors.cardBg,
-                  }
-                }}
+                className="glass-modal"
+                width={600}
+                confirmLoading={loadingUser}
               >
-                <label style={{ fontWeight: 500, color: colors.textPrimary }}>
-                  Motivation Message:
-                  <input
-                    type="text"
-                    value={editableQuote}
-                    onChange={e => setEditableQuote(e.target.value)}
-                    style={{ 
-                      marginLeft: 10, 
-                      width: '80%',
-                      background: colors.cardBg,
-                      color: colors.textPrimary,
-                      border: `1px solid ${colors.border}`,
-                      padding: '4px 8px'
-                    }}
-                    maxLength={120}
-                  />
-                </label>
+                <Form layout="vertical" style={{ marginTop: 20 }}>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item label={<span style={{ color: 'rgba(255,255,255,0.7)' }}>Full Name</span>}>
+                        <Input
+                          value={editForm.name}
+                          onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                          style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label={<span style={{ color: 'rgba(255,255,255,0.7)' }}>Phone Number</span>}>
+                        <Input
+                          value={editForm.phone_number}
+                          onChange={e => setEditForm({ ...editForm, phone_number: e.target.value })}
+                          style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Form.Item label={<span style={{ color: 'rgba(255,255,255,0.7)' }}>Address</span>}>
+                    <Input
+                      value={editForm.address}
+                      onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                      style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                    />
+                  </Form.Item>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item label={<span style={{ color: 'rgba(255,255,255,0.7)' }}>Social Situation</span>}>
+                        <Input
+                          value={editForm.social_situation}
+                          onChange={e => setEditForm({ ...editForm, social_situation: e.target.value })}
+                          style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label={<span style={{ color: 'rgba(255,255,255,0.7)' }}>SOS Number</span>}>
+                        <Input
+                          value={editForm.sos_number}
+                          onChange={e => setEditForm({ ...editForm, sos_number: e.target.value })}
+                          style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Form.Item label={<span style={{ color: 'rgba(255,255,255,0.7)' }}>Motivation Quote</span>}>
+                    <Input.TextArea
+                      value={editForm.quote}
+                      onChange={e => setEditForm({ ...editForm, quote: e.target.value })}
+                      style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                      rows={2}
+                      maxLength={120}
+                    />
+                  </Form.Item>
+                </Form>
               </Modal>
             </Col>
             <Col xs={24} md={16}>
-              <Card 
-                style={{ 
-                  padding: '20px', 
-                  marginBottom: '20px',
-                  background: colors.cardBg
-                }}
-              >
-                <Menu 
-                  onClick={handleMenuClick} 
-                  selectedKeys={[activeTab]} 
+              <Card className="glass-card" style={{ marginBottom: 20 }}>
+                <Menu
+                  onClick={handleMenuClick}
+                  selectedKeys={[activeTab]}
                   mode="horizontal"
-                  style={{ background: colors.cardBg }}
+                  style={{ background: 'transparent', borderBottom: 'none' }}
+                  className="profile-menu"
                 >
-                  <Menu.Item key="information" icon={<InfoCircleOutlined />}>
+                  <Menu.Item key="information" icon={<InfoCircleOutlined />} style={{ color: '#fff' }}>
                     Information
                   </Menu.Item>
-                  <Menu.Item key="history" icon={<HistoryOutlined />}>
+                  <Menu.Item key="history" icon={<HistoryOutlined />} style={{ color: '#fff' }}>
                     History
                   </Menu.Item>
-                  <Menu.Item key="documents" icon={<FilePdfOutlined />}>
+                  <Menu.Item key="documents" icon={<FilePdfOutlined />} style={{ color: '#fff' }}>
                     Documents & Skills
                   </Menu.Item>
                 </Menu>
               </Card>
               {activeTab === 'information' && (
-                <Card 
-                  style={{ 
-                    padding: '32px', 
-                    background: colors.infoBg, 
-                    borderRadius: '16px', 
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-                    border: `1px solid ${colors.border}`
-                  }}
-                >
-                  <Title 
-                    level={5} 
-                    style={{ 
-                      marginBottom: '20px', 
-                      color: colors.primary, 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 8 
-                    }}
-                  >
-                    <InfoCircleOutlined style={{ color: colors.primary }} /> Personal Information
+                <Card className="glass-card" style={{ padding: '32px' }}>
+                  <Title level={4} style={{ marginBottom: 32, color: '#fff' }}>
+                    <InfoCircleOutlined style={{ marginRight: 12, color: '#1890ff' }} />
+                    Personal Information
                   </Title>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '20px 32px',
-                    marginBottom: '16px',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <UserOutlined style={{ color: colors.primary, fontSize: 18 }} />
-                      <div>
-                        <Text strong style={{ color: colors.primary }}>Name:</Text>
-                        <div style={{ color: colors.textPrimary }}>{contextUser?.name || 'Name not provided'}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <InfoCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
-                      <div>
-                        <Text strong style={{ color: colors.primary }}>Department:</Text>
-                        <div style={{ color: colors.textPrimary }}>
-                          {typeof contextUser?.department === 'string' 
-                            ? contextUser.department 
-                            : (contextUser?.department?.name || 'Department not provided')}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <PhoneOutlined style={{ color: '#faad14', fontSize: 18 }} />
-                      <div>
-                        <Text strong style={{ color: colors.primary }}>Phone:</Text>
-                        <div style={{ color: colors.textPrimary }}>{contextUser?.phone_number || 'Phone not provided'}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <HomeOutlined style={{ color: '#13c2c2', fontSize: 18 }} />
-                      <div>
-                        <Text strong style={{ color: colors.primary }}>Address:</Text>
-                        <div style={{ color: colors.textPrimary }}>{contextUser?.adress || 'Address not provided'}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <MailOutlined style={{ color: '#722ed1', fontSize: 18 }} />
-                      <div>
-                        <Text strong style={{ color: colors.primary }}>Email:</Text>
-                        <div style={{ color: colors.textPrimary }}>{contextUser?.email || 'Email not provided'}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <SafetyCertificateOutlined style={{ color: '#eb2f96', fontSize: 18 }} />
-                      <div>
-                        <Text strong style={{ color: colors.primary }}>SOS Number:</Text>
-                        <div style={{ color: colors.textPrimary }}>{contextUser?.sos_number || 'SOS Number not provided'}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <HeartOutlined style={{ color: '#cf1322', fontSize: 18 }} />
-                      <div>
-                        <Text strong style={{ color: colors.primary }}>Social Situation:</Text>
-                        <div style={{ color: colors.textPrimary }}>{contextUser?.social_situation || 'Social Situation not provided'}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ marginBottom: 18 }}>
-                    <Title level={5} style={{ color: colors.primary, marginBottom: 6 }}>Skills & Interests</Title>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ background: '#e6f7ff', color: colors.primary, borderRadius: 6, padding: '2px 10px', fontSize: 13 }}>Teamwork</span>
-                      <span style={{ background: '#fff1b8', color: '#faad14', borderRadius: 6, padding: '2px 10px', fontSize: 13 }}>Communication</span>
-                      <span style={{ background: '#ffd6e7', color: '#eb2f96', borderRadius: 6, padding: '2px 10px', fontSize: 13 }}>Problem Solving</span>
-                      <span style={{ background: '#f6ffed', color: '#389e0d', borderRadius: 6, padding: '2px 10px', fontSize: 13 }}>Creativity</span>
-                    </div>
+
+                  <Row gutter={[32, 32]}>
+                    <Col xs={24} sm={12}>
+                      <Space direction="vertical" size={1}>
+                        <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>FULL NAME</Text>
+                        <Text strong style={{ color: '#fff', fontSize: 16 }}>{contextUser?.name || 'N/A'}</Text>
+                      </Space>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Space direction="vertical" size={1}>
+                        <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>DEPARTMENT</Text>
+                        <Text strong style={{ color: '#fff', fontSize: 16 }}>
+                          {typeof contextUser?.department === 'string' ? contextUser.department : (contextUser?.department?.name || 'N/A')}
+                        </Text>
+                      </Space>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Space direction="vertical" size={1}>
+                        <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>PHONE NUMBER</Text>
+                        <Text strong style={{ color: '#fff', fontSize: 16 }}>{contextUser?.phone_number || 'N/A'}</Text>
+                      </Space>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Space direction="vertical" size={1}>
+                        <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>EMAIL ADDRESS</Text>
+                        <Text strong style={{ color: '#fff', fontSize: 16 }}>{contextUser?.email || 'N/A'}</Text>
+                      </Space>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Space direction="vertical" size={1}>
+                        <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>ADDRESS</Text>
+                        <Text strong style={{ color: '#fff', fontSize: 16 }}>{contextUser?.adress || contextUser?.address || 'N/A'}</Text>
+                      </Space>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Space direction="vertical" size={1}>
+                        <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>SOCIAL SITUATION</Text>
+                        <Text strong style={{ color: '#fff', fontSize: 16 }}>{contextUser?.social_situation || 'N/A'}</Text>
+                      </Space>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Space direction="vertical" size={1}>
+                        <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>SOS NUMBER</Text>
+                        <Text strong style={{ color: '#fff', fontSize: 16 }}>{contextUser?.sos_number || 'N/A'}</Text>
+                      </Space>
+                    </Col>
+                  </Row>
+
+                  <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '32px 0' }} />
+
+                  <Title level={5} style={{ color: '#fff', marginBottom: 16 }}>Skills & Interests</Title>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {['Teamwork', 'Communication', 'Problem Solving', 'Creativity'].map(skill => (
+                      <Tag key={skill} color="blue" style={{ borderRadius: 6, padding: '4px 12px', background: 'rgba(24,144,255,0.1)', border: '1px solid rgba(24,144,255,0.2)' }}>
+                        {skill}
+                      </Tag>
+                    ))}
                   </div>
                 </Card>
               )}
               {activeTab === 'history' && (
-                <Card 
-                  style={{ 
-                    padding: '20px', 
-                    background: colors.historyBg, 
-                    borderRadius: 12, 
-                    boxShadow: colors.boxShadow 
-                  }}
-                >
-                  <Title 
-                    level={5} 
-                    style={{ 
-                      marginBottom: '20px', 
-                      color: '#faad14', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 8 
-                    }}
-                  >
-                    <HistoryOutlined style={{ color: '#faad14' }} /> History
+                <Card className="glass-card" style={{ padding: '24px' }}>
+                  <Title level={4} style={{ marginBottom: 24, color: '#fff' }}>
+                    <HistoryOutlined style={{ marginRight: 12, color: '#faad14' }} />
+                    Activity & Events
                   </Title>
-                  <Title level={5} style={{ color: colors.primary, marginTop: 0, marginBottom: 10, fontSize: 16 }}>Events</Title>
+
                   {loadingEvents ? (
-                    <Spin />
+                    <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin size="large" /></div>
                   ) : eventHistory.length === 0 ? (
-                    <Empty description="No events assigned" />
+                    <Empty description={<span style={{ color: 'rgba(255,255,255,0.45)' }}>No events assigned</span>} />
                   ) : (
                     <List
-                      itemLayout="horizontal"
                       dataSource={eventHistory}
                       renderItem={item => (
-                        <List.Item 
-                          style={{ 
-                            background: colors.cardBg, 
-                            borderRadius: 8, 
-                            marginBottom: 10, 
-                            boxShadow: colors.boxShadow, 
-                            padding: 16 
-                          }}
+                        <Card
+                          className="glass-card"
+                          style={{ marginBottom: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+                          styles={{ body: { padding: 20 } }}
                         >
-                          <List.Item.Meta
-                            avatar={<Avatar style={{ background: colors.primary }} icon={<ClockCircleOutlined />} />}
-                            title={
-                              <span style={{ fontWeight: 600, color: colors.primary, fontSize: 15 }}>
-                                <CalendarTwoTone /> {item.title}
-                              </span>
-                            }
-                            description={
-                              <div style={{ fontSize: 13 }}>
-                                <div style={{ marginBottom: 4 }}>
-                                  <span style={{ color: '#faad14', fontWeight: 500 }}><ClockCircleOutlined /> Date:</span> 
-                                  <span style={{ color: colors.textPrimary }}> {item.start_date}</span>
-                                </div>
-                                <div style={{ color: colors.textSecondary, marginBottom: 4 }}>
-                                  <span style={{ color: '#722ed1', fontWeight: 500 }}><InfoCircleOutlined /> Description:</span> 
-                                  {item.description && item.description.length > 60 ? item.description.slice(0, 60) + '...' : item.description}
-                                </div>
-                                <div style={{ fontWeight: 500, marginBottom: 4, color: item.end_date && new Date(item.end_date) < new Date() ? '#cf1322' : '#389e0d' }}>
-                                  <span style={{ color: item.end_date && new Date(item.end_date) < new Date() ? '#cf1322' : '#389e0d' }}>
-                                    <HistoryOutlined /> Status:
-                                  </span> 
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Space direction="vertical" size={4}>
+                              <Text strong style={{ color: '#fff', fontSize: 16 }}>{item.title}</Text>
+                              <Space style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>
+                                <CalendarTwoTone /> {item.start_date}
+                                <span>•</span>
+                                <Tag color={item.end_date && new Date(item.end_date) < new Date() ? 'error' : 'success'} style={{ borderRadius: 4 }}>
                                   {item.end_date && new Date(item.end_date) < new Date() ? 'Ended' : 'Ongoing'}
-                                </div>
-                                <div style={{ fontWeight: 500, color: colors.primary, marginBottom: 2 }}>
-                                  <UserOutlined /> Assigned Users:
-                                </div>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-                                  {(Array.isArray(item.users) && item.users.length > 0
-                                    ? item.users
-                                    : Array.isArray(item.participants) && item.participants.length > 0
-                                      ? item.participants
-                                      : []
-                                  ).length > 0
-                                    ? (Array.isArray(item.users) && item.users.length > 0
-                                        ? item.users
-                                        : item.participants
-                                      ).map(u => (
-                                        <span 
-                                          key={u.id || u.email} 
-                                          style={{ 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            background: theme === 'dark' ? '#1a1a1a' : '#e6f0ff', 
-                                            borderRadius: 6, 
-                                            padding: '2px 8px', 
-                                            marginBottom: 2 
-                                          }}
-                                        >
-                                          <Avatar 
-                                            size={18} 
-                                            style={{ 
-                                              marginRight: 6, 
-                                              background: colors.cardBg, 
-                                              color: colors.primary, 
-                                              fontWeight: 600, 
-                                              fontSize: 11 
-                                            }}
-                                          >
-                                            {u.name ? u.name.charAt(0) : (u.email ? u.email.charAt(0) : '?')}
-                                          </Avatar>
-                                          <span style={{ fontSize: 12, color: colors.textPrimary, fontWeight: 500 }}>
-                                            {u.name || u.email || 'Unknown'}
-                                          </span>
-                                          {u.department && (
-                                            <span style={{ fontSize: 11, color: '#52c41a', marginLeft: 6 }}>
-                                              <InfoCircleOutlined /> {typeof u.department === 'string' 
-                                                ? u.department 
-                                                : (u.department?.name || 'N/A')}
-                                            </span>
-                                          )}
-                                        </span>
-                                      ))
-                                    : <span style={{ fontSize: 12, color: colors.textSecondary }}>No users assigned</span>
-                                  }
-                                </div>
-                              </div>
-                            }
-                          />
-                        </List.Item>
+                                </Tag>
+                              </Space>
+                            </Space>
+                          </div>
+
+                          <Divider style={{ margin: '12px 0', borderColor: 'rgba(255,255,255,0.05)' }} />
+
+                          <Text style={{ color: 'rgba(255,255,255,0.65)' }}>
+                            {item.description}
+                          </Text>
+
+                          <div style={{ marginTop: 16 }}>
+                            <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, display: 'block', marginBottom: 8 }}>PARTICIPANTS</Text>
+                            <Avatar.Group maxCount={5}>
+                              {(item.users || item.participants || []).map(u => (
+                                <Tooltip title={u.name || u.email} key={u.id || u.email}>
+                                  <Avatar src={u.avatar} style={{ background: 'rgba(255,255,255,0.1)' }}>
+                                    {u.name?.charAt(0).toUpperCase() || u.email?.charAt(0).toUpperCase() || '?'}
+                                  </Avatar>
+                                </Tooltip>
+                              ))}
+                            </Avatar.Group>
+                          </div>
+                        </Card>
                       )}
                     />
                   )}
-                  <Title level={5} style={{ color: colors.primary, marginTop: 24, marginBottom: 10, fontSize: 16 }}>Vacations</Title>
+
+                  <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '32px 0' }} />
+
+                  <Title level={4} style={{ marginBottom: 24, color: '#fff' }}>
+                    <CalendarTwoTone style={{ marginRight: 12 }} />
+                    Vacations
+                  </Title>
+
                   {loadingVacations ? (
-                    <Spin />
+                    <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin size="large" /></div>
                   ) : vacations.length === 0 ? (
-                    <Empty description="No vacations found" />
+                    <Empty description={<span style={{ color: 'rgba(255,255,255,0.45)' }}>No vacations found</span>} />
                   ) : (
                     <List
-                      itemLayout="horizontal"
                       dataSource={vacations}
                       renderItem={vac => (
-                        <List.Item 
-                          style={{ 
-                            background: colors.cardBg, 
-                            borderRadius: 8, 
-                            marginBottom: 10, 
-                            boxShadow: colors.boxShadow, 
-                            padding: 16 
-                          }}
+                        <Card
+                          className="glass-card"
+                          style={{ marginBottom: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+                          styles={{ body: { padding: 16 } }}
                         >
-                          <List.Item.Meta
-                            avatar={<Avatar style={{ background: '#faad14' }} icon={<CalendarTwoTone />} />}
-                            title={
-                              <span style={{ fontWeight: 600, color: '#faad14', fontSize: 15 }}>
-                                Vacation: {vac.type || 'N/A'}
-                              </span>
-                            }
-                            description={
-                              <div style={{ fontSize: 13 }}>
-                                <div style={{ marginBottom: 4 }}>
-                                  <span style={{ color: '#faad14', fontWeight: 500 }}>From:</span> 
-                                  <span style={{ color: colors.textPrimary }}> {vac.start_date}</span>
-                                </div>
-                                <div style={{ marginBottom: 4 }}>
-                                  <span style={{ color: '#faad14', fontWeight: 500 }}>To:</span> 
-                                  <span style={{ color: colors.textPrimary }}> {vac.end_date}</span>
-                                </div>
-                                <div style={{ color: colors.textSecondary, marginBottom: 4 }}>
-                                  <span style={{ color: '#722ed1', fontWeight: 500 }}>Reason:</span> 
-                                  {vac.reason && vac.reason.length > 60 ? vac.reason.slice(0, 60) + '...' : vac.reason}
-                                </div>
-                                <div style={{ fontWeight: 500, color: colors.primary, marginBottom: 2 }}>
-                                  <UserOutlined /> Status: {vac.status || 'N/A'}
-                                </div>
-                              </div>
-                            }
-                          />
-                        </List.Item>
+                          <Row justify="space-between" align="middle">
+                            <Col>
+                              <Space direction="vertical" size={0}>
+                                <Text strong style={{ color: '#fff' }}>{vac.reason || 'Vacation'}</Text>
+                                <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>
+                                  {vac.start_date} to {vac.end_date}
+                                </Text>
+                              </Space>
+                            </Col>
+                            <Col>
+                              <Tag color={vac.status === 'approved' ? 'success' : (vac.status === 'pending' ? 'warning' : 'error')}>
+                                {vac.status?.toUpperCase()}
+                              </Tag>
+                            </Col>
+                          </Row>
+                        </Card>
                       )}
                     />
                   )}
                 </Card>
               )}
               {activeTab === 'documents' && (
-                <EmployeeProfileTabs userId={contextUser?.id} isOwnProfile={true} />
+                <Card className="glass-card" style={{ padding: '24px' }}>
+                  <Title level={4} style={{ marginBottom: 24, color: '#fff' }}>
+                    <FilePdfOutlined style={{ marginRight: 12, color: '#ff4d4f' }} />
+                    Documents & Skills
+                  </Title>
+
+                  <EmployeeProfileTabs userId={contextUser?.id} isOwnProfile={true} />
+                </Card>
               )}
             </Col>
           </Row>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   HomeOutlined,
   WindowsOutlined,
- 
+
   UserOutlined,
   SettingOutlined,
   MessageOutlined,
@@ -75,18 +75,15 @@ const Sidebar = () => {
 
   const buildMenuItems = () => {
     const items = [];
-    
+
     // Always visible items
     if (hasPermission('dashboard.view')) {
       items.push(getItem('Home', '/welcome', <HomeOutlined />));
       items.push(getItem('Dashboard', '/dashboard', <WindowsOutlined />));
     }
-    
+
     items.push(getItem('Profile', '/profile', <UserOutlined />));
-    
-    if (hasPermission('settings.view')) {
-      items.push(getItem('Settings', '/settings', <SettingOutlined />));
-    }
+    items.push(getItem('Settings', '/settings', <SettingOutlined />));
 
     // Projects
     if (hasPermission('projects.view')) {
@@ -145,20 +142,20 @@ const Sidebar = () => {
 
     // HR Management Section (Admin/Manager)
     const hrSubItems = [];
-    
+
     // Employee Profiles - Admin and Manager only
     if ((isAdmin() || isManager()) && hasPermission('employees.view')) {
       hrSubItems.push(getItem('Employee Profiles', '/users_setting', <UserOutlined />));
     }
-    
+
     if (hasPermission('onboarding.view')) {
       hrSubItems.push(getItem('Onboarding', '/onboarding', <CheckCircleOutlined />));
     }
-    
+
     if (hasPermission('shifts.view')) {
       hrSubItems.push(getItem('Shift Management', '/shifts', <ClockCircleOutlined />));
     }
-    
+
     if (hasPermission('vacations.view')) {
       hrSubItems.push(getItem('Leave Management', '/leaves', <UserOutlined />));
     }
@@ -169,17 +166,17 @@ const Sidebar = () => {
 
     // Other items (always visible or with basic checks)
     items.push(getItem('Chat', '/dash/chat', <MessageOutlined />));
-    
+
     // Help & Knowledge Base (can be visible to all)
     items.push(getItem('Help Center', '/help', <QuestionCircleOutlined />));
     items.push(getItem('Knowledge Base', '/knowledge', <BookOutlined />));
-    
+
     // Future features (can add permission checks later)
     // items.push(getItem('Notifications', '/notifications', <BellOutlined />));
     // items.push(getItem('Surveys', '/surveys', <FormOutlined />));
     // items.push(getItem('Rewards', '/rewards', <GiftOutlined />));
     // items.push(getItem('Workflow Builder', 'workflow-builder', <ApartmentOutlined />));
-    
+
     items.push(getItem('Logout', 'logout', loggingOut ? <Spin size="small" /> : <LogoutOutlined />));
 
     return items;
@@ -197,7 +194,7 @@ const Sidebar = () => {
         maxWidth: '100%',
         paddingTop: '64px', /* space for the trigger button / logo area */
         paddingLeft: '8px',
-      
+
         paddingRight: '8px',
         boxSizing: 'border-box',
         position: 'relative',

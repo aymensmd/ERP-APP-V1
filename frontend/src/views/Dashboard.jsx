@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Row, Col, Typography, Card, Space, Progress, Badge, Avatar, Divider, Spin, Statistic, Tag, Button, Empty, DatePicker, Select, List, Alert } from 'antd';
-import { 
-  LineChartOutlined, 
-  TeamOutlined, 
+import {
+  LineChartOutlined,
+  TeamOutlined,
   DashboardOutlined,
   DollarOutlined,
   CheckCircleOutlined,
@@ -45,7 +45,7 @@ export default function Dashboard() {
   const [exceptions, setExceptions] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [projects, setProjects] = useState([]);
-  
+
   // Filters
   const [dateRange, setDateRange] = useState([dayjs().subtract(30, 'days'), dayjs()]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -106,7 +106,7 @@ export default function Dashboard() {
       setStatistics(statsRes.data);
       setActivities(activitiesRes.data || []);
       setPerformers(performersRes.data || []);
-      
+
       // Extract approvals and exceptions from urgent items
       const urgentItems = urgentRes.data || [];
       setApprovals(urgentItems.filter(item => item.type === 'approval'));
@@ -155,53 +155,55 @@ export default function Dashboard() {
     <Card
       hoverable={!!onClick}
       onClick={onClick}
-      style={{ 
+      className={`glass-card metric-card ${onClick ? 'clickable' : ''}`}
+      style={{
         height: '100%',
-        background: colors.cardBg,
-        border: `1px solid ${colors.border}`,
-        borderRadius: '8px',
-        transition: 'all 0.3s',
-        cursor: onClick ? 'pointer' : 'default'
+        border: 'none',
+        background: 'rgba(255, 255, 255, 0.6)',
       }}
       styles={{
-        body: { padding: '20px' }
+        body: { padding: '24px' }
       }}
     >
-      <Space direction="vertical" size="small" style={{ width: '100%' }}>
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ 
+          <div style={{
             padding: '12px',
-            borderRadius: '8px',
-            backgroundColor: `${color}15`,
-            color: color
+            borderRadius: '12px',
+            background: `linear-gradient(135deg, ${color}20, ${color}10)`,
+            color: color,
+            border: `1px solid ${color}30`,
+            boxShadow: `0 4px 12px ${color}20`
           }}>
             {icon}
           </div>
           {change !== undefined && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              color: getChangeColor(change),
-              fontSize: '12px',
-              fontWeight: 500
-            }}>
-              {change >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-              <Text style={{ marginLeft: '4px', color: getChangeColor(change) }}>
-                {Math.abs(change)}%
-              </Text>
-            </div>
+            <Tag
+              color={change >= 0 ? 'success' : 'error'}
+              style={{
+                margin: 0,
+                borderRadius: '12px',
+                padding: '4px 10px',
+                border: 'none',
+                fontWeight: 600
+              }}
+            >
+              {change >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {Math.abs(change)}%
+            </Tag>
           )}
         </div>
-        <Statistic
-          title={<Text style={{ color: colors.textSecondary, fontSize: '13px' }}>{title}</Text>}
-          value={value}
-          valueStyle={{ 
-            color: colors.textPrimary, 
-            fontSize: '24px', 
-            fontWeight: 600,
-            marginTop: '8px'
-          }}
-        />
+        <div>
+          <Text type="secondary" style={{ fontSize: '14px', fontWeight: 500 }}>{title}</Text>
+          <Statistic
+            value={value}
+            valueStyle={{
+              fontSize: '32px',
+              fontWeight: 700,
+              marginTop: '4px',
+              fontFamily: 'Inter, sans-serif'
+            }}
+          />
+        </div>
         {changeLabel && (
           <Text type="secondary" style={{ fontSize: '12px' }}>{changeLabel}</Text>
         )}
@@ -360,12 +362,13 @@ export default function Dashboard() {
     <div className="dashboard-container" style={{ padding: '0' }}>
       {/* Dashboard Header with Filters */}
       <Card
-        style={{ 
-          marginBottom: '24px',
-          background: colors.cardBg,
-          border: `1px solid ${colors.border}`,
-          borderRadius: '8px'
+        className="glass-card"
+        style={{
+          marginBottom: '32px',
+          border: 'none',
+          background: 'rgba(255, 255, 255, 0.6)',
         }}
+        styles={{ body: { padding: '32px' } }}
       >
         <Row align="middle" gutter={[16, 16]} justify="space-between">
           <Col flex="auto">
@@ -405,8 +408,8 @@ export default function Dashboard() {
                 format="YYYY-MM-DD"
               />
               {hasPermission('analytics.view') && (
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   icon={<LineChartOutlined />}
                   onClick={() => navigate('/analytics')}
                 >
@@ -443,19 +446,19 @@ export default function Dashboard() {
           {approvals.length > 0 && (
             <Col xs={24} md={12}>
               <Card
+                className="glass-card"
                 title={
                   <Space>
                     <CheckCircleFilled style={{ color: colors.warning }} />
-                    <Text strong style={{ color: colors.textPrimary }}>Pending Approvals</Text>
+                    <Text strong style={{ fontSize: '16px' }}>Pending Approvals</Text>
                   </Space>
                 }
                 extra={
                   <Badge count={approvals.length} />
                 }
-                style={{ 
-                  background: colors.cardBg,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px'
+                style={{
+                  border: 'none',
+                  background: 'rgba(255, 255, 255, 0.6)',
                 }}
               >
                 <List
@@ -486,19 +489,19 @@ export default function Dashboard() {
           {exceptions.length > 0 && (
             <Col xs={24} md={12}>
               <Card
+                className="glass-card"
                 title={
                   <Space>
                     <ExclamationCircleOutlined style={{ color: colors.error }} />
-                    <Text strong style={{ color: colors.textPrimary }}>Exceptions & Alerts</Text>
+                    <Text strong style={{ fontSize: '16px' }}>Exceptions & Alerts</Text>
                   </Space>
                 }
                 extra={
                   <Badge count={exceptions.length} style={{ backgroundColor: colors.error }} />
                 }
-                style={{ 
-                  background: colors.cardBg,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px'
+                style={{
+                  border: 'none',
+                  background: 'rgba(255, 255, 255, 0.6)',
                 }}
               >
                 <List
@@ -537,11 +540,11 @@ export default function Dashboard() {
         {hasPermission('kanban.view') && (
           <Col xs={24} md={12}>
             <Card
-              title={<Text strong style={{ color: colors.textPrimary }}>Tasks Status</Text>}
-              style={{ 
-                background: colors.cardBg,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '8px'
+              className="glass-card"
+              title={<Text strong style={{ fontSize: '16px' }}>Tasks Status</Text>}
+              style={{
+                border: 'none',
+                background: 'rgba(255, 255, 255, 0.6)',
               }}
             >
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -550,8 +553,8 @@ export default function Dashboard() {
                     <Text>Pending Tasks</Text>
                     <Text strong>{tasks.pending || 0}</Text>
                   </div>
-                  <Progress 
-                    percent={tasks.total > 0 ? Math.round((tasks.pending / tasks.total) * 100) : 0} 
+                  <Progress
+                    percent={tasks.total > 0 ? Math.round((tasks.pending / tasks.total) * 100) : 0}
                     strokeColor={colors.warning}
                     showInfo={false}
                   />
@@ -562,8 +565,8 @@ export default function Dashboard() {
                       <Text type="danger">Overdue Tasks</Text>
                       <Text strong type="danger">{tasks.overdue}</Text>
                     </div>
-                    <Progress 
-                      percent={tasks.total > 0 ? Math.round((tasks.overdue / tasks.total) * 100) : 0} 
+                    <Progress
+                      percent={tasks.total > 0 ? Math.round((tasks.overdue / tasks.total) * 100) : 0}
                       strokeColor={colors.error}
                       showInfo={false}
                     />
@@ -579,11 +582,11 @@ export default function Dashboard() {
         {hasPermission('vacations.view') && (
           <Col xs={24} md={12}>
             <Card
-              title={<Text strong style={{ color: colors.textPrimary }}>Leave Requests Status</Text>}
-              style={{ 
-                background: colors.cardBg,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '8px'
+              className="glass-card"
+              title={<Text strong style={{ fontSize: '16px' }}>Leave Requests Status</Text>}
+              style={{
+                border: 'none',
+                background: 'rgba(255, 255, 255, 0.6)',
               }}
             >
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -592,8 +595,8 @@ export default function Dashboard() {
                     <Text>Pending Approvals</Text>
                     <Text strong>{hrm.vacations?.pending || 0}</Text>
                   </div>
-                  <Progress 
-                    percent={hrm.vacations?.pending > 0 ? 100 : 0} 
+                  <Progress
+                    percent={hrm.vacations?.pending > 0 ? 100 : 0}
                     strokeColor={colors.warning}
                     showInfo={false}
                   />
@@ -603,8 +606,8 @@ export default function Dashboard() {
                     <Text>Currently on Leave</Text>
                     <Text strong>{hrm.vacations?.active || 0}</Text>
                   </div>
-                  <Progress 
-                    percent={hrm.vacations?.active > 0 ? 100 : 0} 
+                  <Progress
+                    percent={hrm.vacations?.active > 0 ? 100 : 0}
                     strokeColor={colors.info}
                     showInfo={false}
                   />
@@ -619,11 +622,11 @@ export default function Dashboard() {
         {hasPermission('invoices.view') && (
           <Col xs={24} md={12}>
             <Card
-              title={<Text strong style={{ color: colors.textPrimary }}>Invoice Status</Text>}
-              style={{ 
-                background: colors.cardBg,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '8px'
+              className="glass-card"
+              title={<Text strong style={{ fontSize: '16px' }}>Invoice Status</Text>}
+              style={{
+                border: 'none',
+                background: 'rgba(255, 255, 255, 0.6)',
               }}
             >
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -632,8 +635,8 @@ export default function Dashboard() {
                     <Text>Pending Invoices</Text>
                     <Text strong>{finance.invoices?.pending || 0}</Text>
                   </div>
-                  <Progress 
-                    percent={finance.invoices?.pending > 0 ? 100 : 0} 
+                  <Progress
+                    percent={finance.invoices?.pending > 0 ? 100 : 0}
                     strokeColor={colors.warning}
                     showInfo={false}
                   />
@@ -644,8 +647,8 @@ export default function Dashboard() {
                       <Text type="danger">Overdue Invoices</Text>
                       <Text strong type="danger">{finance.invoices.overdue}</Text>
                     </div>
-                    <Progress 
-                      percent={100} 
+                    <Progress
+                      percent={100}
                       strokeColor={colors.error}
                       showInfo={false}
                     />
@@ -664,7 +667,7 @@ export default function Dashboard() {
       {hasPermission('analytics.view') && (
         <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
           <Col xs={24}>
-            <Card 
+            <Card
               className="main-content-card"
               title={
                 <Space>
@@ -677,7 +680,7 @@ export default function Dashboard() {
                   View Full Analytics
                 </Button>
               }
-              style={{ 
+              style={{
                 background: colors.cardBg,
                 border: `1px solid ${colors.border}`,
                 borderRadius: '8px'
@@ -693,7 +696,7 @@ export default function Dashboard() {
       <Row gutter={[24, 24]} className="content-row">
         <Col xs={24} lg={16}>
           {hasPermission('analytics.view') && (
-            <Card 
+            <Card
               className="main-content-card"
               title={
                 <Space>
@@ -701,7 +704,7 @@ export default function Dashboard() {
                   <Text strong style={{ color: colors.textPrimary }}>Top Performers</Text>
                 </Space>
               }
-              style={{ 
+              style={{
                 background: colors.cardBg,
                 border: `1px solid ${colors.border}`,
                 borderRadius: '8px'
@@ -713,9 +716,9 @@ export default function Dashboard() {
                 <Row gutter={[16, 16]}>
                   {performers.slice(0, 6).map(performer => (
                     <Col xs={24} sm={12} md={8} key={performer.id}>
-                      <Card 
+                      <Card
                         hoverable
-                        style={{ 
+                        style={{
                           height: '100%',
                           background: colors.cardBg,
                           border: `1px solid ${colors.border}`,
@@ -726,15 +729,15 @@ export default function Dashboard() {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                          <Avatar 
-                            size={48} 
+                          <Avatar
+                            size={48}
                             src={performer.avatar}
-                            icon={<UserOutlined />} 
-                            style={{ 
-                              backgroundColor: colors.primary, 
+                            icon={<UserOutlined />}
+                            style={{
+                              backgroundColor: colors.primary,
                               marginRight: '12px',
                               border: `2px solid ${colors.border}`
-                            }} 
+                            }}
                           />
                           <div style={{ flex: 1 }}>
                             <Text strong style={{ display: 'block', color: colors.textPrimary }}>
@@ -745,9 +748,9 @@ export default function Dashboard() {
                             </Text>
                           </div>
                         </div>
-                        <Progress 
-                          percent={performer.progress} 
-                          status="active" 
+                        <Progress
+                          percent={performer.progress}
+                          status="active"
                           strokeColor={{
                             '0%': colors.primary,
                             '100%': colors.success,
@@ -766,7 +769,7 @@ export default function Dashboard() {
         {/* Recent Activities - Permission Gated */}
         {hasPermission('audit-logs.view') && (
           <Col xs={24} lg={8}>
-            <Card 
+            <Card
               className="side-content-card"
               title={
                 <Space>
@@ -779,7 +782,7 @@ export default function Dashboard() {
                   View All
                 </Button>
               }
-              style={{ 
+              style={{
                 height: '100%',
                 background: colors.cardBg,
                 border: `1px solid ${colors.border}`,
@@ -787,13 +790,13 @@ export default function Dashboard() {
                 display: 'flex',
                 flexDirection: 'column'
               }}
-              styles={{ 
-                body: { 
-                  flex: 1, 
-                  overflow: 'auto', 
+              styles={{
+                body: {
+                  flex: 1,
+                  overflow: 'auto',
                   padding: '16px',
                   maxHeight: '800px'
-                } 
+                }
               }}
             >
               {activities.length === 0 ? (
@@ -801,9 +804,9 @@ export default function Dashboard() {
               ) : (
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                   {activities.slice(0, 15).map((activity, index) => (
-                    <div 
+                    <div
                       key={activity.id || index}
-                      style={{ 
+                      style={{
                         padding: '12px',
                         background: theme === 'dark' ? '#141414' : '#fafafa',
                         borderRadius: '8px',
@@ -812,12 +815,12 @@ export default function Dashboard() {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                        <Badge 
+                        <Badge
                           status={
                             activity.status === 'success' || activity.status === 'approved' ? 'success' :
-                            activity.status === 'error' || activity.status === 'rejected' ? 'error' :
-                            activity.status === 'processing' ? 'processing' : 'default'
-                          } 
+                              activity.status === 'error' || activity.status === 'rejected' ? 'error' :
+                                activity.status === 'processing' ? 'processing' : 'default'
+                          }
                           style={{ marginTop: '4px' }}
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -831,8 +834,8 @@ export default function Dashboard() {
                               </Tag>
                             )}
                           </div>
-                          <Text style={{ 
-                            color: colors.textSecondary, 
+                          <Text style={{
+                            color: colors.textSecondary,
                             fontSize: '12px',
                             display: 'block',
                             marginBottom: '4px'

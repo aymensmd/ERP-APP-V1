@@ -18,14 +18,14 @@ class RolePermissionSeeder extends Seeder
         $allPermissions = Permission::all()->pluck('id')->toArray();
 
         // Admin role gets all permissions
-        $adminRole = Role::where('slug', 'admin')->first();
+        $adminRole = Role::withoutGlobalScopes()->where('slug', 'admin')->first();
         if ($adminRole) {
             $adminRole->permissions()->sync($allPermissions);
             $this->command->info('Admin role assigned all permissions');
         }
 
         // Manager role gets most permissions except admin-only
-        $managerRole = Role::where('slug', 'manager')->first();
+        $managerRole = Role::withoutGlobalScopes()->where('slug', 'manager')->first();
         if ($managerRole) {
             // Get all permissions except Admin group, plus specific Admin permissions
             $baseManagerPermissions = Permission::where(function($query) {
@@ -58,7 +58,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         // Employee role gets basic permissions
-        $employeeRole = Role::where('slug', 'employee')->first();
+        $employeeRole = Role::withoutGlobalScopes()->where('slug', 'employee')->first();
         if ($employeeRole) {
             $employeePermissions = Permission::whereIn('name', [
                 'employees.view',

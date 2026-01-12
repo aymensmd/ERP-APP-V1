@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { storage, STORAGE_KEYS } from '../utils/storage';
 import { Button, Card, Checkbox, Form, Input, message } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStateContext } from '../contexts/ContextProvider';
@@ -18,7 +19,7 @@ export default function Login() {
   const onFinish = async (values) => {
     try {
       setLoading(true);
-      
+
       const response = await axios.post('/login', {
         email: values.email,
         password: values.password,
@@ -28,11 +29,11 @@ export default function Login() {
       const responseData = response.data.data || response.data;
       const { token, user } = responseData;
 
-      localStorage.setItem('ACCESS_TOKEN', token);
-      localStorage.setItem('USER_DATA', JSON.stringify(user));
-      localStorage.setItem('USER', JSON.stringify(user));
+      storage.set(STORAGE_KEYS.TOKEN, token);
+      storage.set(STORAGE_KEYS.USER_DATA, user);
+      storage.set(STORAGE_KEYS.USER, user);
       if (user?.id) {
-        localStorage.setItem('USER_ID', user.id.toString());
+        storage.set(STORAGE_KEYS.USER_ID, user.id.toString());
       }
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
@@ -64,7 +65,7 @@ export default function Login() {
             <h1 className="login-title">Welcome to AnyName</h1>
             <p className="login-subtitle">Your business communication hub</p>
           </div>
-          
+
           <Form
             name="login-form"
             initialValues={{ remember: true }}
@@ -79,9 +80,9 @@ export default function Login() {
                 { type: 'email', message: 'Please enter a valid email!' }
               ]}
             >
-              <Input 
-                prefix={<MailOutlined className="input-icon" />} 
-                placeholder="Email address" 
+              <Input
+                prefix={<MailOutlined className="input-icon" />}
+                placeholder="Email address"
                 size="large"
               />
             </Form.Item>
@@ -107,9 +108,9 @@ export default function Login() {
             </Form.Item>
 
             <Form.Item>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={loading}
                 block
                 size="large"
@@ -125,7 +126,7 @@ export default function Login() {
       <div className="animated-background">
         <div className="water-blob water-blob-1"></div>
         <div className="water-blob water-blob-2"></div>
-    
+
         <div className="water-blob water-blob-3"></div>
         <div className="water-blob water-blob-4"></div>
       </div>

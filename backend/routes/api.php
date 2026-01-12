@@ -71,7 +71,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->middleware('admin');
     
     // Roles and Permissions routes
-    Route::get('/roles', [RoleController::class, 'index']); // Allow viewing for form dropdowns
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store'])->middleware('admin');
+    Route::get('/roles/{role}', [RoleController::class, 'show']);
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('admin');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware('admin');
     Route::get('/permissions', [PermissionController::class, 'index'])->middleware('permission:permissions.view');
     
     // Employees routes - Permission-based access
@@ -148,7 +152,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/employees/{userId}/certifications', [EmployeeProfileController::class, 'addCertification']);
     Route::put('/certifications/{certificationId}', [EmployeeProfileController::class, 'updateCertification']);
     Route::delete('/certifications/{certificationId}', [EmployeeProfileController::class, 'deleteCertification']);
-    Route::get('/organizational-chart', [EmployeeProfileController::class, 'getOrganizationalChart'])->middleware('permission:org-chart.view');
+    Route::get('/organizational-chart', [App\Http\Controllers\HierarchyController::class, 'index'])->middleware('permission:org-chart.view');
+    Route::get('/hierarchy/my-team', [App\Http\Controllers\HierarchyController::class, 'myTeam']);
+    Route::get('/departments/tree', [DepartmentController::class, 'tree']); // New method we might need later
     
     // Leads routes (CRM)
     Route::get('/leads', [LeadController::class, 'index'])->middleware('permission:leads.view');

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { storage, STORAGE_KEYS } from '../utils/storage';
 import axios from '../axios';
 import { message } from 'antd';
 import { useStateContext } from './ContextProvider';
@@ -8,10 +9,9 @@ const CompanyContext = createContext();
 export const CompanyProvider = ({ children }) => {
   const { setUser } = useStateContext();
   const [currentCompany, setCurrentCompany] = useState(() => {
-    const saved = localStorage.getItem('current_company');
-    return saved ? JSON.parse(saved) : null;
+    return storage.get(STORAGE_KEYS.CURRENT_COMPANY);
   });
-  
+
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -21,8 +21,8 @@ export const CompanyProvider = ({ children }) => {
       const response = await axios.get('/user');
       const userData = response.data.data || response.data;
       setUser(userData);
-      localStorage.setItem('USER', JSON.stringify(userData));
-      localStorage.setItem('USER_DATA', JSON.stringify(userData));
+      storage.set(STORAGE_KEYS.USER, userData);
+      storage.set(STORAGE_KEYS.USER_DATA, userData);
     } catch (error) {
       console.error('Error refreshing user permissions:', error);
     }
@@ -35,15 +35,15 @@ export const CompanyProvider = ({ children }) => {
       const response = await axios.get('/companies/my');
       const companiesData = Array.isArray(response.data) ? response.data : [];
       setCompanies(companiesData);
-      
+
       // If no current company is set, use the first one
       if (!currentCompany && companiesData.length > 0) {
         const firstCompany = companiesData[0];
         setCurrentCompany(firstCompany);
-        localStorage.setItem('current_company_id', firstCompany.id.toString());
-        localStorage.setItem('current_company', JSON.stringify(firstCompany));
+        storage.set(STORAGE_KEYS.COMPANY_ID, firstCompany.id.toString());
+        storage.set(STORAGE_KEYS.CURRENT_COMPANY, firstCompany);
       }
-      
+
       return companiesData;
     } catch (error) {
       console.error('Error loading companies:', error);
@@ -58,37 +58,37 @@ export const CompanyProvider = ({ children }) => {
   const switchCompany = async (companyId) => {
     try {
       setLoading(true);
-      
+
       const company = companies.find(c => c.id === companyId || c.id === parseInt(companyId));
       if (company) {
         setCurrentCompany(company);
-        localStorage.setItem('current_company_id', company.id.toString());
-        localStorage.setItem('current_company', JSON.stringify(company));
-        
+        storage.set(STORAGE_KEYS.COMPANY_ID, company.id.toString());
+        storage.set(STORAGE_KEYS.CURRENT_COMPANY, company);
+
         // Refresh user permissions for the new company context
         await refreshUserPermissions();
-        
+
         message.success(`Switched to ${company.name}`);
-        
+
         // Reload page to apply company scope to all queries
         window.location.reload();
       } else {
         // If company not in list, reload companies first
         await loadCompanies();
-        const updatedCompanies = await axios.get('/companies/my').then(res => 
+        const updatedCompanies = await axios.get('/companies/my').then(res =>
           Array.isArray(res.data) ? res.data : []
         );
         setCompanies(updatedCompanies);
-        
+
         const updatedCompany = updatedCompanies.find(c => c.id === companyId || c.id === parseInt(companyId));
         if (updatedCompany) {
           setCurrentCompany(updatedCompany);
-          localStorage.setItem('current_company_id', updatedCompany.id.toString());
-          localStorage.setItem('current_company', JSON.stringify(updatedCompany));
-          
+          storage.set(STORAGE_KEYS.COMPANY_ID, updatedCompany.id.toString());
+          storage.set(STORAGE_KEYS.CURRENT_COMPANY, updatedCompany);
+
           // Refresh user permissions
           await refreshUserPermissions();
-          
+
           window.location.reload();
         }
       }
@@ -102,7 +102,7 @@ export const CompanyProvider = ({ children }) => {
 
   // Initialize on mount
   useEffect(() => {
-    const token = localStorage.getItem('ACCESS_TOKEN');
+    const token = storage.get(STORAGE_KEYS.TOKEN);
     if (token) {
       loadCompanies();
     }
@@ -110,7 +110,7 @@ export const CompanyProvider = ({ children }) => {
 
   // Restore company from localStorage on mount
   useEffect(() => {
-    const savedCompanyId = localStorage.getItem('current_company_id');
+    const savedCompanyId = storage.get(STORAGE_KEYS.COMPANY_ID);
     if (savedCompanyId && !currentCompany) {
       // Try to find company in loaded list
       const company = companies.find(c => c.id === parseInt(savedCompanyId));

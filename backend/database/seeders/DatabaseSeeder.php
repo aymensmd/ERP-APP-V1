@@ -33,17 +33,17 @@ class DatabaseSeeder extends Seeder
 
         // Create default roles (don't set IDs, let them auto-increment if needed)
         $adminRole = Role::firstOrCreate(
-            ['slug' => 'admin'],
+            ['slug' => 'admin', 'company_id' => $company->id],
             ['name' => 'Admin']
         );
         
         $managerRole = Role::firstOrCreate(
-            ['slug' => 'manager'],
+            ['slug' => 'manager', 'company_id' => $company->id],
             ['name' => 'Manager']
         );
         
         $employeeRole = Role::firstOrCreate(
-            ['slug' => 'employee'],
+            ['slug' => 'employee', 'company_id' => $company->id],
             ['name' => 'Employee']
         );
 
@@ -95,8 +95,14 @@ class DatabaseSeeder extends Seeder
                     'phone_number' => '123456789',
                     'sos_number' => '987654321',
                     'social_situation' => 'Single',
+                    'is_platform_admin' => true,
                 ]
             );
+
+            // Ensure is_platform_admin is set even if user existed
+            if (!$adminUser->is_platform_admin) {
+                $adminUser->update(['is_platform_admin' => true]);
+            }
 
             // Link admin user to company (use updateOrInsert to avoid duplicates)
             DB::table('company_user')->updateOrInsert(

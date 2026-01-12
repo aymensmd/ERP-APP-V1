@@ -20,6 +20,7 @@ import {
   Typography,
   Avatar,
   Badge,
+  Tooltip,
   Dropdown,
 } from 'antd';
 import {
@@ -34,14 +35,18 @@ import {
   TrophyOutlined,
   MoreOutlined,
   EyeOutlined,
+  ArrowsAltOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import axios from '../axios';
 import dayjs from 'dayjs';
 import { useCompany } from '../contexts/CompanyContext';
+import { useStateContext } from '../contexts/ContextProvider';
 
 const { TextArea } = Input;
 const { Option } = Select;
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
@@ -58,6 +63,7 @@ const Leads = () => {
   });
   const [form] = Form.useForm();
   const { currentCompany } = useCompany();
+  const { theme } = useStateContext();
 
   useEffect(() => {
     if (currentCompany) {
@@ -85,7 +91,8 @@ const Leads = () => {
       if (filters.search) params.append('search', filters.search);
 
       const response = await axios.get(`/leads?${params.toString()}`);
-      setLeads(Array.isArray(response.data.data) ? response.data.data : (response.data.data || []));
+      const leadData = response.data.data || response.data || [];
+      setLeads(Array.isArray(leadData) ? leadData : []);
     } catch (error) {
       console.error('Error fetching leads:', error);
       message.error('Failed to load leads');
@@ -105,29 +112,12 @@ const Leads = () => {
 
   const handleSubmit = async (values) => {
     try {
-      // Build payload with only defined values
       const payload = {
-        first_name: values.first_name,
-        last_name: values.last_name,
-        email: values.email || null,
-        phone: values.phone || null,
-        company_name: values.company_name || null,
-        job_title: values.job_title || null,
-        industry: values.industry || null,
+        ...values,
         status: values.status || 'new',
         source: values.source || 'other',
         score: values.score || 0,
-        estimated_value: values.estimated_value || null,
-        notes: values.notes || null,
-        assigned_to: values.assigned_to || null,
       };
-      
-      // Remove null values
-      Object.keys(payload).forEach(key => {
-        if (payload[key] === null || payload[key] === undefined || payload[key] === '') {
-          delete payload[key];
-        }
-      });
 
       if (editingLead) {
         await axios.put(`/leads/${editingLead.id}`, payload);
@@ -143,17 +133,10 @@ const Leads = () => {
       fetchLeads();
       fetchStats();
     } catch (error) {
-      console.error('Lead save error:', error);
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.message || 
-                          'Failed to save lead';
+      const errorMessage = error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to save lead';
       message.error(errorMessage);
-      if (error.response?.data?.messages) {
-        // Show validation errors
-        Object.values(error.response.data.messages).flat().forEach(msg => {
-          message.error(msg);
-        });
-      }
     }
   };
 
@@ -179,16 +162,48 @@ const Leads = () => {
     }
   };
 
+  const onDragEnd = async (result) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const leadId = draggableId;
+    const newStatus = destination.droppableId;
+
+    // Optimistic UI update
+    const updatedLeads = leads.map(l =>
+      l.id.toString() === leadId ? { ...l, status: newStatus } : l
+    );
+    setLeads(updatedLeads);
+
+    try {
+      await axios.put(`/leads/${leadId}`, { status: newStatus });
+      message.success(`Lead moved to ${newStatus}`);
+      fetchLeads();
+      fetchStats();
+    } catch (error) {
+      message.error('Failed to update lead status');
+      fetchLeads(); // Rollback
+    }
+  };
+
   const getLeadsByStatus = (status) => {
     return leads.filter(lead => lead.status === status);
   };
 
   const pipelineStages = [
-    { key: 'new', label: 'New', color: '#1890ff', count: getLeadsByStatus('new').length },
-    { key: 'contacted', label: 'Contacted', color: '#722ed1', count: getLeadsByStatus('contacted').length },
-    { key: 'qualified', label: 'Qualified', color: '#13c2c2', count: getLeadsByStatus('qualified').length },
-    { key: 'converted', label: 'Converted', color: '#52c41a', count: getLeadsByStatus('converted').length },
-    { key: 'lost', label: 'Lost', color: '#ff4d4f', count: getLeadsByStatus('lost').length },
+    { key: 'new', label: 'New', color: '#4f46e5', icon: <PlusOutlined /> },
+    { key: 'contacted', label: 'Contacted', color: '#7c3aed', icon: <PhoneOutlined /> },
+    { key: 'qualified', label: 'Qualified', color: '#10b981', icon: <TrophyOutlined /> },
+    { key: 'converted', label: 'Converted', color: '#059669', icon: <BankOutlined /> },
+    { key: 'lost', label: 'Lost', color: '#ef4444', icon: <CloseOutlined /> },
   ];
 
   const getStatusColor = (status) => {
@@ -220,14 +235,14 @@ const Leads = () => {
       key: 'name',
       render: (_, record) => (
         <Space>
-          <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }}>
+          <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#4f46e5' }}>
             {record.first_name?.charAt(0)}
           </Avatar>
           <div>
             <div style={{ fontWeight: 600 }}>{record.first_name} {record.last_name}</div>
             {record.email && (
               <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-                <MailOutlined /> {record.email}
+                <MailOutlined style={{ marginRight: 4 }} /> {record.email}
               </div>
             )}
           </div>
@@ -238,38 +253,16 @@ const Leads = () => {
       title: 'Company',
       dataIndex: 'company_name',
       key: 'company_name',
-      render: (text) => text ? (
-        <Space>
-          <BankOutlined />
-          {text}
-        </Space>
-      ) : '-',
-    },
-    {
-      title: 'Phone',
-      dataIndex: 'phone',
-      key: 'phone',
-      render: (text) => text ? (
-        <Space>
-          <PhoneOutlined />
-          {text}
-        </Space>
-      ) : '-',
+      render: (text) => text || '-',
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Tag color={getStatusColor(status)}>{status.toUpperCase()}</Tag>
-      ),
-    },
-    {
-      title: 'Source',
-      dataIndex: 'source',
-      key: 'source',
-      render: (source) => (
-        <Tag color={getSourceColor(source)}>{source.replace('_', ' ').toUpperCase()}</Tag>
+        <Tag color={getStatusColor(status)} style={{ borderRadius: 6 }}>
+          {status.toUpperCase()}
+        </Tag>
       ),
     },
     {
@@ -277,67 +270,59 @@ const Leads = () => {
       dataIndex: 'score',
       key: 'score',
       render: (score) => (
-        <Tag color={score >= 70 ? 'success' : score >= 40 ? 'warning' : 'default'}>
-          {score}/100
-        </Tag>
+        <Badge count={`${score}%`} overflowCount={100}
+          style={{ backgroundColor: score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444' }} />
       ),
     },
     {
-      title: 'Value',
+      title: 'Estimated Value',
       dataIndex: 'estimated_value',
       key: 'estimated_value',
       render: (value) => value ? (
-        <Space>
-          <DollarOutlined />
-          {value.toLocaleString()}
-        </Space>
+        <Text strong style={{ color: '#10b981' }}>
+          ${parseFloat(value).toLocaleString()}
+        </Text>
       ) : '-',
-    },
-    {
-      title: 'Assigned To',
-      dataIndex: 'assigned_to',
-      key: 'assigned_to',
-      render: (_, record) => record.assignedTo ? record.assignedTo.name : '-',
     },
     {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditingLead(record);
-              form.setFieldsValue(record);
-              setModalVisible(true);
-            }}
-          >
-            Edit
-          </Button>
-          {record.status === 'qualified' && (
+          <Tooltip title="Edit">
             <Button
-              type="link"
-              onClick={async () => {
-                try {
-                  await axios.post(`/leads/${record.id}/convert`);
-                  message.success('Lead converted to customer successfully');
-                  fetchLeads();
-                } catch (error) {
-                  message.error('Failed to convert lead');
-                }
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingLead(record);
+                form.setFieldsValue(record);
+                setModalVisible(true);
               }}
-            >
-              Convert to Customer
-            </Button>
+            />
+          </Tooltip>
+          {record.status === 'qualified' && (
+            <Tooltip title="Convert to Customer">
+              <Button
+                type="text"
+                icon={<ArrowsAltOutlined />}
+                style={{ color: '#10b981' }}
+                onClick={async () => {
+                  try {
+                    await axios.post(`/leads/${record.id}/convert`);
+                    message.success('Lead converted to customer successfully');
+                    fetchLeads();
+                  } catch (error) {
+                    message.error('Failed to convert lead');
+                  }
+                }}
+              />
+            </Tooltip>
           )}
           <Popconfirm
             title="Delete this lead?"
             onConfirm={() => handleDelete(record.id)}
           >
-            <Button type="link" danger icon={<DeleteOutlined />}>
-              Delete
-            </Button>
+            <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       ),
@@ -345,271 +330,225 @@ const Leads = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        {/* Statistics */}
-        <Row gutter={16}>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="Total Leads"
-                value={stats.total || 0}
-                prefix={<UserOutlined />}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="New Leads"
-                value={stats.new || 0}
-                valueStyle={{ color: '#1890ff' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="Qualified"
-                value={stats.qualified || 0}
-                valueStyle={{ color: '#52c41a' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="Converted"
-                value={stats.converted || 0}
-                valueStyle={{ color: '#52c41a' }}
-                prefix={<TrophyOutlined />}
-              />
-            </Card>
-          </Col>
-        </Row>
+    <div className="page-container">
+      <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <Title level={2} className="text-gradient" style={{ marginBottom: 4 }}>Leads Pipeline</Title>
+          <Text type="secondary">Manage your sales opportunities and track conversions.</Text>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          size="large"
+          style={{ borderRadius: 10, background: 'var(--primary-gradient)', border: 'none' }}
+          onClick={() => {
+            setEditingLead(null);
+            form.resetFields();
+            setModalVisible(true);
+          }}
+        >
+          New Lead
+        </Button>
+      </div>
 
-        {/* Filters and Actions */}
-        <Card>
-          <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}>
-            <Space>
-              <Select
-                placeholder="Filter by Status"
-                allowClear
-                style={{ width: 150 }}
-                value={filters.status}
-                onChange={(value) => setFilters({ ...filters, status: value })}
-              >
-                <Option value="new">New</Option>
-                <Option value="contacted">Contacted</Option>
-                <Option value="qualified">Qualified</Option>
-                <Option value="converted">Converted</Option>
-                <Option value="lost">Lost</Option>
-              </Select>
-              <Select
-                placeholder="Filter by Source"
-                allowClear
-                style={{ width: 150 }}
-                value={filters.source}
-                onChange={(value) => setFilters({ ...filters, source: value })}
-              >
-                <Option value="website">Website</Option>
-                <Option value="referral">Referral</Option>
-                <Option value="social_media">Social Media</Option>
-                <Option value="email">Email</Option>
-                <Option value="phone">Phone</Option>
-                <Option value="other">Other</Option>
-              </Select>
-              <Input
-                placeholder="Search leads..."
-                style={{ width: 200 }}
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                allowClear
-              />
-            </Space>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                setEditingLead(null);
-                form.resetFields();
-                setModalVisible(true);
-              }}
-            >
-              Add Lead
-            </Button>
-          </Space>
+      <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
+        <Col xs={24} sm={12} md={6}>
+          <Card className="glass-card" bodyStyle={{ padding: 20 }}>
+            <Statistic
+              title={<Text type="secondary">Total Leads</Text>}
+              value={stats.total || 0}
+              prefix={<UserOutlined style={{ color: '#4f46e5' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card className="glass-card" bodyStyle={{ padding: 20 }}>
+            <Statistic
+              title={<Text type="secondary">New Leads</Text>}
+              value={stats.new || 0}
+              valueStyle={{ color: '#4f46e5' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card className="glass-card" bodyStyle={{ padding: 20 }}>
+            <Statistic
+              title={<Text type="secondary">Qualified</Text>}
+              value={stats.qualified || 0}
+              valueStyle={{ color: '#10b981' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card className="glass-card" bodyStyle={{ padding: 20 }}>
+            <Statistic
+              title={<Text type="secondary">Converted</Text>}
+              value={stats.converted || 0}
+              valueStyle={{ color: '#059669' }}
+              prefix={<TrophyOutlined />}
+            />
+          </Card>
+        </Col>
+      </Row>
 
+      <Card className="glass-card" bodyStyle={{ padding: 24 }}>
+        <div style={{ marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Input
+            placeholder="Search leads..."
+            prefix={<EyeOutlined style={{ color: '#bfbfbf' }} />}
+            style={{ width: 300, borderRadius: 8 }}
+            value={filters.search}
+            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            allowClear
+          />
+          <Select
+            placeholder="Source"
+            allowClear
+            style={{ width: 150 }}
+            value={filters.source}
+            onChange={(value) => setFilters({ ...filters, source: value })}
+          >
+            <Option value="website">Website</Option>
+            <Option value="referral">Referral</Option>
+            <Option value="social_media">Social Media</Option>
+            <Option value="email">Email</Option>
+            <Option value="phone">Phone</Option>
+            <Option value="other">Other</Option>
+          </Select>
+          <div style={{ flex: 1 }} />
           <Tabs
             activeKey={viewMode}
             onChange={setViewMode}
+            type="card"
+            className="premium-tabs"
             items={[
-              {
-                key: 'table',
-                label: 'Table View',
-                children: (
-                  <Table
-                    dataSource={leads}
-                    columns={columns}
-                    rowKey="id"
-                    loading={loading}
-                    pagination={{ pageSize: 15 }}
-                  />
-                ),
-              },
-              {
-                key: 'pipeline',
-                label: 'Pipeline View',
-                children: (
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: '16px', 
-                    overflowX: 'auto',
-                    paddingBottom: '16px',
-                    minHeight: '600px'
-                  }}>
-                    {pipelineStages.map((stage) => {
-                      const stageLeads = getLeadsByStatus(stage.key);
-                      return (
-                        <Card
-                          key={stage.key}
-                          title={
-                            <Space>
-                              <Badge count={stage.count} showZero style={{ backgroundColor: stage.color }} />
-                              <Text strong>{stage.label}</Text>
-                            </Space>
-                          }
-                          style={{
-                            minWidth: '300px',
-                            flex: '0 0 300px',
-                            borderTop: `4px solid ${stage.color}`,
-                          }}
-                          bodyStyle={{ 
-                            padding: '12px',
-                            maxHeight: '600px',
-                            overflowY: 'auto'
-                          }}
-                        >
-                          <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                            {stageLeads.length === 0 ? (
-                              <div style={{ 
-                                textAlign: 'center', 
-                                padding: '20px',
-                                color: '#999',
-                                fontSize: '14px'
-                              }}>
-                                No leads in this stage
-                              </div>
-                            ) : (
-                              stageLeads.map((lead) => {
-                                const menuItems = pipelineStages
-                                  .filter(s => s.key !== lead.status)
-                                  .map(s => ({
-                                    key: s.key,
-                                    label: s.label,
-                                    onClick: () => handleStatusChange(lead.id, s.key),
-                                  }));
-
-                                return (
-                                  <Card
-                                    key={lead.id}
-                                    size="small"
-                                    style={{
-                                      cursor: 'pointer',
-                                      marginBottom: '8px',
-                                      backgroundColor: '#fafafa',
-                                    }}
-                                    hoverable
-                                    onClick={() => {
-                                      setEditingLead(lead);
-                                      form.setFieldsValue(lead);
-                                      setModalVisible(true);
-                                    }}
-                                    actions={[
-                                      <Dropdown
-                                        key="more"
-                                        menu={{ items: menuItems }}
-                                        trigger={['click']}
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <MoreOutlined />
-                                      </Dropdown>,
-                                    ]}
-                                  >
-                                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                                      <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                                        <Text strong>
-                                          {lead.first_name} {lead.last_name}
-                                        </Text>
-                                        <Tag color={getStatusColor(lead.status)} style={{ margin: 0 }}>
-                                          {lead.status}
-                                        </Tag>
-                                      </Space>
-                                      {lead.company_name && (
-                                        <Space>
-                                          <BankOutlined />
-                                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                                            {lead.company_name}
-                                          </Text>
-                                        </Space>
-                                      )}
-                                      {lead.email && (
-                                        <Space>
-                                          <MailOutlined />
-                                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                                            {lead.email}
-                                          </Text>
-                                        </Space>
-                                      )}
-                                      {lead.phone && (
-                                        <Space>
-                                          <PhoneOutlined />
-                                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                                            {lead.phone}
-                                          </Text>
-                                        </Space>
-                                      )}
-                                      <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                                        {lead.score !== undefined && lead.score !== null && (
-                                          <Tag color={lead.score >= 70 ? 'success' : lead.score >= 40 ? 'warning' : 'default'}>
-                                            Score: {lead.score}
-                                          </Tag>
-                                        )}
-                                        {lead.estimated_value && (
-                                          <Space>
-                                            <DollarOutlined />
-                                            <Text strong style={{ fontSize: '12px' }}>
-                                              {parseFloat(lead.estimated_value).toLocaleString()}
-                                            </Text>
-                                          </Space>
-                                        )}
-                                      </Space>
-                                      {lead.assignedTo && (
-                                        <Space>
-                                          <Avatar size="small" icon={<UserOutlined />} />
-                                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                                            {lead.assignedTo.name}
-                                          </Text>
-                                        </Space>
-                                      )}
-                                    </Space>
-                                  </Card>
-                                );
-                              })
-                            )}
-                          </Space>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                ),
-              },
+              { key: 'table', label: 'Table' },
+              { key: 'pipeline', label: 'Pipeline' },
             ]}
           />
-        </Card>
-      </Space>
+        </div>
 
-      {/* Create/Edit Modal */}
+        {viewMode === 'table' ? (
+          <Table
+            dataSource={leads}
+            columns={columns}
+            rowKey="id"
+            loading={loading}
+            pagination={{ pageSize: 10 }}
+            className="premium-table"
+          />
+        ) : (
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div style={{
+              display: 'flex',
+              gap: 20,
+              overflowX: 'auto',
+              paddingBottom: 16,
+              minHeight: 500
+            }}>
+              {pipelineStages.map((stage) => {
+                const stageLeads = getLeadsByStatus(stage.key);
+                return (
+                  <Droppable key={stage.key} droppableId={stage.key}>
+                    {(provided, snapshot) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        style={{
+                          background: snapshot.isDraggingOver ? 'rgba(0,0,0,0.02)' : 'transparent',
+                          transition: 'background 0.2s ease',
+                          minWidth: 280,
+                          flex: '0 0 280px',
+                          borderRadius: 12,
+                          padding: 4
+                        }}
+                      >
+                        <div style={{
+                          padding: '12px 16px',
+                          marginBottom: 16,
+                          borderRadius: 10,
+                          background: `${stage.color}15`,
+                          borderLeft: `4px solid ${stage.color}`,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <Space>
+                            <span style={{ color: stage.color }}>{stage.icon}</span>
+                            <Text strong style={{ color: stage.color }}>{stage.label}</Text>
+                          </Space>
+                          <Badge count={stageLeads.length} style={{ backgroundColor: stage.color }} />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                          {stageLeads.map((lead, index) => (
+                            <Draggable key={lead.id.toString()} draggableId={lead.id.toString()} index={index}>
+                              {(provided, snapshot) => (
+                                <Card
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  size="small"
+                                  className="glass-card"
+                                  style={{
+                                    ...provided.draggableProps.style,
+                                    boxShadow: snapshot.isDragging ? '0 8px 16px rgba(0,0,0,0.1)' : 'var(--shadow-sm)',
+                                    cursor: 'grab',
+                                    border: snapshot.isDragging ? `1px solid ${stage.color}` : undefined
+                                  }}
+                                  bodyStyle={{ padding: 12 }}
+                                  onClick={() => {
+                                    setEditingLead(lead);
+                                    form.setFieldsValue(lead);
+                                    setModalVisible(true);
+                                  }}
+                                >
+                                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                      <Text strong>{lead.first_name} {lead.last_name}</Text>
+                                      <div style={{ fontSize: 10, color: '#8c8c8c' }}>
+                                        #{lead.id}
+                                      </div>
+                                    </div>
+                                    {lead.company_name && (
+                                      <Text type="secondary" style={{ fontSize: 12 }}>
+                                        <BankOutlined style={{ marginRight: 4 }} /> {lead.company_name}
+                                      </Text>
+                                    )}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                      <Badge
+                                        status={lead.score >= 70 ? 'success' : lead.score >= 40 ? 'warning' : 'error'}
+                                        text={`${lead.score}%`}
+                                      />
+                                      {lead.estimated_value && (
+                                        <Text style={{ color: '#10b981', fontSize: 12, fontWeight: 600 }}>
+                                          ${parseFloat(lead.estimated_value).toLocaleString()}
+                                        </Text>
+                                      )}
+                                    </div>
+                                    {lead.assignedTo && (
+                                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <Avatar size={18} icon={<UserOutlined />} />
+                                        <Text type="secondary" style={{ fontSize: 11 }}>{lead.assignedTo.name}</Text>
+                                      </div>
+                                    )}
+                                  </Space>
+                                </Card>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      </div>
+                    )}
+                  </Droppable>
+                );
+              })}
+            </div>
+          </DragDropContext>
+        )}
+      </Card>
+
       <Modal
         title={editingLead ? 'Edit Lead' : 'Create Lead'}
         open={modalVisible}
@@ -620,6 +559,7 @@ const Leads = () => {
         }}
         footer={null}
         width={700}
+        className="premium-modal"
       >
         <Form form={form} onFinish={handleSubmit} layout="vertical">
           <Row gutter={16}>
@@ -667,11 +607,7 @@ const Leads = () => {
             <Col span={12}>
               <Form.Item name="status" label="Status">
                 <Select>
-                  <Option value="new">New</Option>
-                  <Option value="contacted">Contacted</Option>
-                  <Option value="qualified">Qualified</Option>
-                  <Option value="converted">Converted</Option>
-                  <Option value="lost">Lost</Option>
+                  {pipelineStages.map(s => <Option key={s.key} value={s.key}>{s.label}</Option>)}
                 </Select>
               </Form.Item>
             </Col>
@@ -711,7 +647,7 @@ const Leads = () => {
                 >
                   {users.map(user => (
                     <Option key={user.id} value={user.id}>
-                      {user.name} ({user.email})
+                      {user.name}
                     </Option>
                   ))}
                 </Select>
@@ -721,13 +657,24 @@ const Leads = () => {
           <Form.Item name="notes" label="Notes">
             <TextArea rows={4} />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">
-              {editingLead ? 'Update' : 'Create'} Lead
-            </Button>
+          <Form.Item style={{ borderTop: '1px solid #f0f0f0', paddingTop: 20, marginTop: 20, textAlign: 'right', marginBottom: 0 }}>
+            <Space>
+              <Button onClick={() => setModalVisible(false)}>Cancel</Button>
+              <Button type="primary" htmlType="submit" style={{ background: 'var(--primary-gradient)', border: 'none' }}>
+                {editingLead ? 'Update' : 'Create'} Lead
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>
+      <style>{`
+        .premium-tabs .ant-tabs-nav-list { background: rgba(0,0,0,0.02); padding: 4px; border-radius: 8px; }
+        .premium-tabs .ant-tabs-tab { border: none !important; background: transparent !important; margin: 0 !important; }
+        .premium-tabs .ant-tabs-tab-active { background: #fff !important; border-radius: 6px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important; }
+        .premium-table .ant-table { background: transparent !important; }
+        .premium-table .ant-table-thead > tr > th { background: rgba(0,0,0,0.02) !important; color: #8c8c8c !important; font-weight: 600 !important; font-size: 12px !important; text-transform: uppercase !important; border-bottom: 2px solid #f0f0f0 !important; }
+        .premium-table .ant-table-row:hover > td { background: rgba(79, 70, 229, 0.02) !important; }
+      `}</style>
     </div>
   );
 };
