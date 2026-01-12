@@ -11,6 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
+use App\Traits\HasHierarchy;
 
     /**
      * The attributes that are mass assignable.
@@ -283,5 +284,112 @@ class User extends Authenticatable
     public function isAdmin()
     {
         return $this->role_id === 1;
+    }
+
+    /**
+     * Get the user's permission scopes for a company.
+     */
+    public function permissionScopes()
+    {
+        return $this->hasMany(\App\Models\PermissionScope::class);
+    }
+
+    /**
+     * Get the user's scope for a specific permission.
+     */
+    public function getPermissionScope(string $permissionName, $companyId = null): ?string
+    {
+        if (!$companyId) {
+            $companyId = request()->attributes->get('current_company_id') ?? session('current_company_id');
+        }
+
+        if (!$companyId) {
+            return null;
+        }
+
+        // Admin has company scope for everything
+        if ($this->isAdminInCompany($companyId)) {
+            return 'company';
+        }
+
+        // Check for user-specific scope override
+        $scopeOverride = \DB::table('permission_scopes')
+            ->join('permissions', 'permission_scopes.permission_id', '=', 'permissions.id')
+            ->where('permission_scopes.user_id', $this->id)
+            ->where('permission_scopes.company_id', $companyId)
+            ->where('permissions.name', $permissionName)
+            ->value('permission_scopes.scope');
+
+        if ($scopeOverride) {
+            return $scopeOverride;
+        }
+
+        // Check role-based permission (default to 'self' if granted)
+        $hasPermission = $this->hasPermissionInCompany($permissionName, $companyId);
+
+        return $hasPermission ? 'self' : null;
+    }
+
+    /**
+     * Check if user can access a specific record based on permission scope.
+     */
+    public function canAccess($model, string $permission): bool
+    {
+        $companyId = request()->attributes->get('current_company_id') ?? session('current_company_id');
+        $scope = $this->getPermissionScope($permission, $companyId);
+
+        if (!$scope) {
+            return false;
+        }
+
+        return match($scope) {
+            'company' => true,
+            'department' => $this->canAccessInDepartment($model),
+            'self' => $this->canAccessOwn($model),
+            default => false,
+        };
+    }
+
+    /**
+     * Check if user can access model in their department.
+     */
+    private function canAccessInDepartment($model): bool
+    {
+        if (isset($model->department_id)) {
+            return $model->department_id === $this->department_id;
+        }
+
+        if (isset($model->user_id)) {
+            $user = \App\Models\User::find($model->user_id);
+            return $user && $user->department_id === $this->department_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user owns or is the model.
+     */
+    private function canAccessOwn($model): bool
+    {
+        // For User model
+        if ($model instanceof User) {
+            return $model->id === $this->id;
+        }
+
+        // Check various ownership patterns
+        if (isset($model->user_id)) {
+            return $model->user_id === $this->id;
+        }
+
+        if (isset($model->created_by)) {
+            return $model->created_by === $this->id;
+        }
+
+        if (isset($model->assigned_to)) {
+            return $model->assigned_to === $this->id;
+        }
+
+        return false;
     }
 }
