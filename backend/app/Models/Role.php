@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasCompany;
+use App\Traits\Auditable;
 
 class Role extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCompany, Auditable;
 
     protected $fillable = [
+        'company_id',
         'name',
         'slug',
         'description',

@@ -38,9 +38,34 @@ class TenantMiddleware
             // If still no company, return error for protected routes
             if (!$company && $request->is('api/*')) {
                 return response()->json([
-                    'error' => 'Company context required. Please specify company via header, subdomain, or domain.'
+                    'error' => 'Company context required',
+                    'message' => 'Please specify company via X-Company-ID header, subdomain, or domain.',
                 ], 400);
             }
+        }
+
+        // Validate user belongs to the company
+        if ($company && Auth::check()) {
+            if (!$this->userBelongsToCompany(Auth::user(), $company)) {
+                \Log::warning('User attempted to access unauthorized company', [
+                    'user_id' => Auth::id(),
+                    'company_id' => $company->id,
+                    'ip' => $request->ip(),
+                ]);
+
+                return response()->json([
+                    'error' => 'Access denied',
+                    'message' => 'You do not have access to this company.',
+                ], 403);
+            }
+        }
+
+        // Check if company is active
+        if ($company && !$company->is_active) {
+            return response()->json([
+                'error' => 'Company inactive',
+                'message' => 'This company account is currently inactive.',
+            ], 403);
         }
 
         // Set current company in request and session
@@ -102,6 +127,18 @@ class TenantMiddleware
         }
 
         return null;
+    }
+
+    /**
+     * Check if user belongs to company.
+     */
+    private function userBelongsToCompany($user, $company): bool
+    {
+        return \DB::table('company_user')
+            ->where('user_id', $user->id)
+            ->where('company_id', $company->id)
+            ->where('status', 'active')
+            ->exists();
     }
 }
 

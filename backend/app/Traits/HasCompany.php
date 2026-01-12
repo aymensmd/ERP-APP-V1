@@ -15,6 +15,23 @@ trait HasCompany
     {
         // Apply company scope automatically
         static::addGlobalScope(new \App\Scopes\CompanyScope);
+
+        // Auto-populate company_id on creation
+        static::creating(function ($model) {
+            if (!$model->company_id) {
+                $companyId = request()->attributes->get('current_company_id') ?? session('current_company_id');
+                if ($companyId) {
+                    $model->company_id = $companyId;
+                }
+            }
+        });
+
+        // Prevent company_id changes on existing records
+        static::updating(function ($model) {
+            if ($model->isDirty('company_id') && $model->getOriginal('company_id')) {
+                throw new \Exception('Cannot change company_id of existing record. Model: ' . get_class($model));
+            }
+        });
     }
 
     /**
@@ -53,6 +70,23 @@ trait HasCompany
     public function scopeWithoutCompanyScope($query)
     {
         return $query->withoutGlobalScope(CompanyScope::class);
+    }
+
+    /**
+     * Check if the model belongs to the current company.
+     */
+    public function belongsToCurrentCompany(): bool
+    {
+        $companyId = request()->attributes->get('current_company_id') ?? session('current_company_id');
+        return $this->company_id === $companyId;
+    }
+
+    /**
+     * Get the current company ID from request/session.
+     */
+    public static function getCurrentCompanyId(): ?int
+    {
+        return request()->attributes->get('current_company_id') ?? session('current_company_id');
     }
 }
 
