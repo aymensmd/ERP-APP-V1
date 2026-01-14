@@ -131,7 +131,7 @@ const Projects = () => {
         // Refresh projects list
         const response = await axios.get('/projects');
         setProjects(Array.isArray(response.data) ? response.data : []);
-      } catch (error) {
+      } catch {
         message.error('Failed to delete project');
       }
     }
@@ -196,8 +196,8 @@ const Projects = () => {
               style={{ maxWidth: 400 }}
               size="large"
               allowClear
-              onSearch={(value) => {
-                // Search will be handled by filtering
+              onSearch={() => {
+                // Search handled by filtering
               }}
             />
           </Col>

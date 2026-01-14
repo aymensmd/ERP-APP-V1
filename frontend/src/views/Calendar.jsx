@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Typography, Card, Calendar as AntCalendar, Badge, ConfigProvider } from 'antd';
 import { CalendarOutlined } from '@ant-design/icons';
 import { useStateContext } from '../contexts/ContextProvider';
@@ -34,7 +34,7 @@ const dateCellRender = (value) => {
 
 const Calendar = () => {
   const { theme } = useStateContext();
-  const [value, setValue] = useState(null);
+  
 
   const themeStyles = {
     light: {
@@ -98,7 +98,6 @@ const Calendar = () => {
         >
           <AntCalendar
             fullscreen={false}
-            onSelect={(v) => setValue(v)}
             dateCellRender={dateCellRender}
             style={{ background: 'transparent' }}
           />

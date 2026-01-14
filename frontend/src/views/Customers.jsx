@@ -137,7 +137,7 @@ const Customers = () => {
       await axios.delete(`/customers/${id}`);
       message.success('Customer deleted successfully');
       fetchCustomers();
-    } catch (error) {
+    } catch {
       message.error('Failed to delete customer');
     }
   };
@@ -147,7 +147,7 @@ const Customers = () => {
       const response = await axios.get(`/customers/${customer.id}`);
       setSelectedCustomer(response.data);
       setDetailModalVisible(true);
-    } catch (error) {
+    } catch {
       message.error('Failed to load customer details');
     }
   };

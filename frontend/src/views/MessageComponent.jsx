@@ -12,8 +12,7 @@ import {
   Dropdown,
   Space,
   Tooltip,
-  Popover,
-  theme
+  Popover
 } from 'antd';
 import { 
   DeleteOutlined ,
@@ -82,19 +81,25 @@ const MessageComponent = () => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages, selectedUser]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const msgIdRef = useRef(0);
+  const generateId = () => {
+    msgIdRef.current += 1;
+    return String(msgIdRef.current);
   };
 
   const handleSend = () => {
     if (newMessage.trim() !== "") {
       const newMsg = {
-        id: Date.now().toString(),
+        id: generateId(),
         text: newMessage,
         sender: '1', // current user
         timestamp: new Date().toISOString(),
@@ -118,27 +123,23 @@ const MessageComponent = () => {
         }));
       }, 1000);
 
-      // Simulate reply after 1-3 seconds
-      if (Math.random() > 0.3) {
-        const replyDelay = 1000 + Math.random() * 2000;
-        setIsTyping(true);
+      // Simulate reply after fixed delay
+      setIsTyping(true);
+      setTimeout(() => {
+        setIsTyping(false);
+        const replyMsg = {
+          id: generateId(),
+          text: getRandomReply(),
+          sender: selectedUser.id,
+          timestamp: new Date().toISOString(),
+          status: 'delivered'
+        };
         
-        setTimeout(() => {
-          setIsTyping(false);
-          const replyMsg = {
-            id: Date.now().toString(),
-            text: getRandomReply(),
-            sender: selectedUser.id,
-            timestamp: new Date().toISOString(),
-            status: 'delivered'
-          };
-          
-          setMessages(prev => ({
-            ...prev,
-            [selectedUser.id]: [...(prev[selectedUser.id] || []), replyMsg]
-          }));
-        }, replyDelay);
-      }
+        setMessages(prev => ({
+          ...prev,
+          [selectedUser.id]: [...(prev[selectedUser.id] || []), replyMsg]
+        }));
+      }, 1500);
     }
   };
 
@@ -169,14 +170,7 @@ const MessageComponent = () => {
 
   const currentMessages = messages[selectedUser.id] || [];
 
-  const getStatusIndicator = (user) => {
-    switch (user.status) {
-      case 'online': return <Badge status="success" />;
-      case 'offline': return <Badge status="default" />;
-      case 'away': return <Badge status="warning" />;
-      default: return <Badge status="default" />;
-    }
-  };
+  // Removed unused getStatusIndicator
 
   const getMessageStatusIcon = (msg) => {
     switch (msg.status) {

@@ -1,5 +1,5 @@
 import { Button, Card, Drawer, Typography, Flex, message } from 'antd';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import CongeForm from '../Form/CongeForm';
 import VacData from '../data/VacData';
 import axios from '../axios';
@@ -7,7 +7,7 @@ import { useStateContext } from '../contexts/ContextProvider';
 
 const { Title, Text } = Typography;
 
-const Banner = ({ userId }) => {
+const Banner = () => {
   const { theme } = useStateContext();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [secondDrawerVisible, setSecondDrawerVisible] = useState(false);
@@ -37,13 +37,7 @@ const Banner = ({ userId }) => {
 
   const colors = themeColors[theme];
 
-  useEffect(() => {
-    fetchVacations();
-    const interval = setInterval(fetchVacations, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchVacations = async () => {
+  const fetchVacations = useCallback(async () => {
     try {
       const token = localStorage.getItem('ACCESS_TOKEN');
       const userData = localStorage.getItem('USER') || localStorage.getItem('USER_DATA');
@@ -76,7 +70,7 @@ const Banner = ({ userId }) => {
               user.id = userId;
               localStorage.setItem('USER', JSON.stringify(user));
               localStorage.setItem('USER_ID', userId.toString());
-            } catch (e) {
+            } catch {
               // If parsing fails, just store the new user data
               localStorage.setItem('USER', JSON.stringify(userResponseData));
               localStorage.setItem('USER_ID', userId.toString());
@@ -99,7 +93,7 @@ const Banner = ({ userId }) => {
     } catch (error) {
       console.error('Failed to fetch vacations', error);
     }
-  };
+  }, []);
 
   const calculateTotalVacationDays = (vacations) => {
     let totalDays = 0;
@@ -113,6 +107,12 @@ const Banner = ({ userId }) => {
       });
     setVacationDays(totalDays);
   };
+
+  useEffect(() => {
+    fetchVacations();
+    const interval = setInterval(fetchVacations, 5000);
+    return () => clearInterval(interval);
+  }, [fetchVacations]);
 
   const showDrawer = () => setDrawerVisible(true);
   const closeDrawer = () => setDrawerVisible(false);

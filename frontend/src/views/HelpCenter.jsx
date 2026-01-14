@@ -39,7 +39,7 @@ const HelpCenter = () => {
 
   const colors = themeStyles[theme];
 
-  const submit = (vals) => {
+  const submit = () => {
     message.success('Support request submitted successfully! We will get back to you soon.');
     form.resetFields();
   };

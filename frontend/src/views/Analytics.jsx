@@ -3,6 +3,7 @@ import { Typography, Row, Col, Card, Statistic, Space, ConfigProvider, Spin } fr
 import { ArrowUpOutlined, ArrowDownOutlined, TeamOutlined, ProjectOutlined, PieChartOutlined } from '@ant-design/icons';
 import { useStateContext } from '../contexts/ContextProvider';
 import axios from '../axios';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, PieChart as RCPieChart, Pie, Cell } from 'recharts';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -261,23 +262,53 @@ const Analytics = () => {
           }}
         >
           <Space direction="vertical" style={{ width: '100%' }}>
-            <div style={{ 
-              height: 300, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              color: colors.textSecondary,
-              border: `2px dashed ${colors.border}`,
-              borderRadius: '12px',
-              background: theme === 'dark' ? '#2a2a2a' : '#fafafa'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <PieChartOutlined style={{ fontSize: 48, color: colors.primary, marginBottom: 16 }} />
-                <div style={{ color: colors.textSecondary }}>
-                  Chart placeholder — integrate a charting library (Recharts / Chart.js / ApexCharts) for visual analytics
+            <Row gutter={[24, 24]}>
+              <Col xs={24} md={12}>
+                <div style={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        { name: 'Completed', value: projects.completed || 0 },
+                        { name: 'In Progress', value: projects.in_progress || 0 },
+                        { name: 'Planned', value: projects.planned || 0 },
+                      ]}
+                      margin={{ top: 16, right: 16, left: 0, bottom: 0 }}
+                    >
+                      <XAxis dataKey="name" stroke={colors.textSecondary} />
+                      <YAxis stroke={colors.textSecondary} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="value" fill={colors.primary} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              </div>
-            </div>
+              </Col>
+              <Col xs={24} md={12}>
+                <div style={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RCPieChart>
+                      <Pie
+                        data={[
+                          { name: 'Approved', value: vacations.approved || 0 },
+                          { name: 'Pending', value: vacations.pending || 0 },
+                          { name: 'Rejected', value: vacations.rejected || 0 },
+                        ]}
+                        dataKey="value"
+                        nameKey="name"
+                        outerRadius={110}
+                        label
+                      >
+                        <Cell fill={colors.success} />
+                        <Cell fill={colors.warning} />
+                        <Cell fill={colors.error} />
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </RCPieChart>
+                  </ResponsiveContainer>
+                </div>
+              </Col>
+            </Row>
           </Space>
         </Card>
       </div>

@@ -41,7 +41,7 @@ function getItem(label, key, icon, children, type) {
 }
 
 const Sidebar = () => {
-  const { user, logout } = useStateContext();
+  const { logout } = useStateContext();
   const { hasPermission, hasAnyPermission, isAdmin, isManager } = usePermissions();
   const location = useLocation();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -157,6 +157,10 @@ const Sidebar = () => {
 
     if (hasPermission('shifts.view')) {
       hrSubItems.push(getItem('Shift Management', '/shifts', <ClockCircleOutlined />));
+    }
+
+    if (hasAnyPermission(['attendance.view','time-tracking.view'])) {
+      hrSubItems.push(getItem('Attendance', '/attendance', <ClockCircleOutlined />));
     }
 
     if (hasPermission('vacations.view')) {

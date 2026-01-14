@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useContext } from "react";
 
 const StateContext = createContext({
   user: null,
@@ -23,7 +23,7 @@ export const ContextProvider = ({ children }) => {
         if (typeof parsedUser.permissions === 'string') {
           try {
             parsedUser.permissions = JSON.parse(parsedUser.permissions);
-          } catch (e) {
+          } catch {
             parsedUser.permissions = [];
           }
         } else if (typeof parsedUser.permissions === 'object') {
@@ -68,7 +68,7 @@ export const ContextProvider = ({ children }) => {
         if (typeof normalizedUser.permissions === 'string') {
           try {
             normalizedUser.permissions = JSON.parse(normalizedUser.permissions);
-          } catch (e) {
+          } catch {
             normalizedUser.permissions = [];
           }
         } else if (typeof normalizedUser.permissions === 'object') {

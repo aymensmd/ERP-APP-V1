@@ -41,7 +41,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel, mode = 'create' }) => {
   const [departments, setDepartments] = useState([]);
   const [roles, setRoles] = useState([]);
   const [managers, setManagers] = useState([]);
-  const [permissions, setPermissions] = useState([]);
+  const [, setPermissions] = useState([]);
   const [groupedPermissions, setGroupedPermissions] = useState({});
   const { hasPermission } = usePermissions();
   const canManagePermissions = hasPermission('permissions.manage') || hasPermission('employees.update');

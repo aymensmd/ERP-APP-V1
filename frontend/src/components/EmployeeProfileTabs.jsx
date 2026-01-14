@@ -16,7 +16,6 @@ import {
 } from '@ant-design/icons';
 import axios from '../axios';
 import dayjs from 'dayjs';
-import { useCompany } from '../contexts/CompanyContext';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -36,7 +35,6 @@ const EmployeeProfileTabs = ({ userId, isOwnProfile = false }) => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form] = Form.useForm();
-  const { currentCompany } = useCompany();
 
   useEffect(() => {
     fetchProfileData();
@@ -79,7 +77,7 @@ const EmployeeProfileTabs = ({ userId, isOwnProfile = false }) => {
       setDocModalVisible(false);
       form.resetFields();
       fetchProfileData();
-    } catch (error) {
+    } catch {
       message.error('Failed to upload document');
     }
   };
@@ -103,7 +101,7 @@ const EmployeeProfileTabs = ({ userId, isOwnProfile = false }) => {
       setEditingItem(null);
       form.resetFields();
       fetchProfileData();
-    } catch (error) {
+    } catch {
       message.error('Failed to save skill');
     }
   };
@@ -137,7 +135,7 @@ const EmployeeProfileTabs = ({ userId, isOwnProfile = false }) => {
       setEditingItem(null);
       form.resetFields();
       fetchProfileData();
-    } catch (error) {
+    } catch {
       message.error('Failed to save certification');
     }
   };
@@ -151,7 +149,7 @@ const EmployeeProfileTabs = ({ userId, isOwnProfile = false }) => {
       await axios.delete(endpoint);
       message.success(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully`);
       fetchProfileData();
-    } catch (error) {
+    } catch {
       message.error(`Failed to delete ${type}`);
     }
   };

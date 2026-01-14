@@ -16,7 +16,7 @@ export const useRealTimeData = (url, interval = 30000) => {
       if (url.startsWith('http://') || url.startsWith('https://')) {
         // Extract path after /api/ or just the path
         const match = url.match(/\/api(\/.+)$/);
-        requestUrl = match ? match[1] : url.replace(/^https?:\/\/[^\/]+\/api/, '');
+        requestUrl = match ? match[1] : url.replace(/^https?:\/\/[^/]+\/api/, '');
       }
       // Ensure it starts with /
       if (!requestUrl.startsWith('/')) {

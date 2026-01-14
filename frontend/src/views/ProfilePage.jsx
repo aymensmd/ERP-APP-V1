@@ -31,7 +31,7 @@ const ProfilePage = () => {
   const [quote, setQuote] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editableQuote, setEditableQuote] = useState(quote);
-  const [loadingUser, setLoadingUser] = useState(false);
+  // Removed unused loadingUser state
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isUploadModalVisible, setIsUploadModalVisible] = useState(false);
   const [vacations, setVacations] = useState([]);
@@ -96,24 +96,24 @@ const ProfilePage = () => {
           return users.some(u => u.id === userId);
         });
         setEventHistory(userEvents);
-      } catch (error) {
-        setEventHistory([]);
-      } finally {
-        setLoadingEvents(false);
-      }
-    };
+    } catch {
+      setEventHistory([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
 
     const fetchUserVacations = async (userId) => {
       setLoadingVacations(true);
       try {
         const response = await axios.get(`/vacations?user_id=${userId}`);
         setVacations(response.data);
-      } catch (error) {
-        setVacations([]);
-      } finally {
-        setLoadingVacations(false);
-      }
-    };
+    } catch {
+      setVacations([]);
+    } finally {
+      setLoadingVacations(false);
+    }
+  };
 
     if (contextUser?.id) {
       fetchUserEvents(contextUser.id);
@@ -240,11 +240,7 @@ const ProfilePage = () => {
           </Card>
         </Modal>
 
-        {loadingUser ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-            <Spin size="large" tip="Loading profile..." />
-          </div>
-        ) : (
+        
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <Card style={{ 
@@ -675,7 +671,7 @@ const ProfilePage = () => {
               )}
             </Col>
           </Row>
-        )}
+        
       </div>
     </ConfigProvider>
   );

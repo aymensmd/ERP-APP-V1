@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, notification, Modal, Avatar, Divider, Spin, ConfigProvider, Typography } from 'antd';
 import Banner from './Banner';
 import axios from '../axios';
@@ -56,9 +56,26 @@ const MainContent = () => {
   const totalPages = Math.ceil(events.length / EVENTS_PER_PAGE);
   const paginatedEvents = events.slice((currentPage - 1) * EVENTS_PER_PAGE, currentPage * EVENTS_PER_PAGE);
 
+  const fetchEvents = useCallback(async () => {
+    try {
+      const response = await axios.get('/events');
+      // Handle Laravel API response format
+      const events = Array.isArray(response.data) ? response.data : (response.data.data || []);
+      setEvents(events);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      notification.error({
+        title: 'Error',
+        description: 'Failed to fetch events!',
+      });
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [fetchEvents]);
 
   useEffect(() => {
     if (!loading && events.length > 0) {
@@ -83,22 +100,7 @@ const MainContent = () => {
     }
   }, [events, loading, endedEventIds]);
 
-  const fetchEvents = async () => {
-    try {
-      const response = await axios.get('/events');
-      // Handle Laravel API response format
-      const events = Array.isArray(response.data) ? response.data : (response.data.data || []);
-      setEvents(events);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      notification.error({
-        title: 'Error',
-        description: 'Failed to fetch events!',
-      });
-      setLoading(false);
-    }
-  };
+  
 
   const openModal = (event) => {
     setSelectedEvent(event);

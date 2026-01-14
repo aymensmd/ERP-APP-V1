@@ -115,7 +115,7 @@ const ActivityTimeline = ({
         old: value.old,
         new: value.new,
       }));
-    } catch (e) {
+    } catch {
       return null;
     }
   };

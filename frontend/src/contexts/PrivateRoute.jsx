@@ -10,7 +10,7 @@ const PrivateRoute = ({
   anyPermission = false 
 }) => {
   const { user, token } = useStateContext();
-  const { hasPermission, hasAnyPermission, hasAllPermissions, isAdmin, isManager, isEmployee } = usePermissions();
+  const { hasAnyPermission, hasAllPermissions, isAdmin, isManager, isEmployee } = usePermissions();
 
   // If no token, redirect to login
   if (!token) {

@@ -7,12 +7,11 @@ import CustomHeader from '../global/CustomHeader';
 import '../app.css';
 import { theme as antdTheme } from 'antd';
 import { useStateContext } from '../contexts/ContextProvider';
-import crm from '../assets/crm.png';
 const { Sider, Content } = Layout;
 
 export default function DefaultLayout() {
   const [collapsed, setCollapsed] = useState(true);
-  const [selectedMenuItem, setSelectedMenuItem] = useState('users_setting');
+  const [, setSelectedMenuItem] = useState('users_setting');
   const { theme } = useStateContext();
   const siderWidth = collapsed ? 80 : 200;
 

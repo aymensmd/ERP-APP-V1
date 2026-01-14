@@ -60,6 +60,11 @@ class PermissionSeeder extends Seeder
             ['name' => 'time-tracking.view', 'resource' => 'time-tracking', 'action' => 'view', 'description' => 'View time tracking', 'group' => 'HRM', 'sort_order' => 80],
             ['name' => 'time-tracking.manage', 'resource' => 'time-tracking', 'action' => 'manage', 'description' => 'Manage time tracking', 'group' => 'HRM', 'sort_order' => 81],
 
+            // Attendance
+            ['name' => 'attendance.view', 'resource' => 'attendance', 'action' => 'view', 'description' => 'View attendance records', 'group' => 'HRM', 'sort_order' => 85],
+            ['name' => 'attendance.manage', 'resource' => 'attendance', 'action' => 'manage', 'description' => 'Manage attendance records', 'group' => 'HRM', 'sort_order' => 86],
+            ['name' => 'attendance.approve', 'resource' => 'attendance', 'action' => 'approve', 'description' => 'Approve attendance records', 'group' => 'HRM', 'sort_order' => 87],
+
             // Company Management (Admin only)
             ['name' => 'companies.view', 'resource' => 'companies', 'action' => 'view', 'description' => 'View companies', 'group' => 'Admin', 'sort_order' => 100],
             ['name' => 'companies.create', 'resource' => 'companies', 'action' => 'create', 'description' => 'Create companies', 'group' => 'Admin', 'sort_order' => 101],
@@ -129,6 +134,14 @@ class PermissionSeeder extends Seeder
             // Organizational Chart
             ['name' => 'org-chart.view', 'resource' => 'org-chart', 'action' => 'view', 'description' => 'View organizational chart', 'group' => 'HRM', 'sort_order' => 220],
             ['name' => 'org-chart.export', 'resource' => 'org-chart', 'action' => 'export', 'description' => 'Export organizational chart', 'group' => 'HRM', 'sort_order' => 221],
+            
+            // Workflow / Automation
+            ['name' => 'workflows.view', 'resource' => 'workflows', 'action' => 'view', 'description' => 'View workflows', 'group' => 'Workflow', 'sort_order' => 300],
+            ['name' => 'workflows.create', 'resource' => 'workflows', 'action' => 'create', 'description' => 'Create workflows', 'group' => 'Workflow', 'sort_order' => 301],
+            ['name' => 'workflows.update', 'resource' => 'workflows', 'action' => 'update', 'description' => 'Update workflows', 'group' => 'Workflow', 'sort_order' => 302],
+            ['name' => 'workflows.delete', 'resource' => 'workflows', 'action' => 'delete', 'description' => 'Delete workflows', 'group' => 'Workflow', 'sort_order' => 303],
+            ['name' => 'workflows.run', 'resource' => 'workflows', 'action' => 'run', 'description' => 'Run workflows', 'group' => 'Workflow', 'sort_order' => 304],
+            ['name' => 'workflows.publish', 'resource' => 'workflows', 'action' => 'publish', 'description' => 'Publish workflows', 'group' => 'Workflow', 'sort_order' => 305],
         ];
 
         foreach ($permissions as $permission) {

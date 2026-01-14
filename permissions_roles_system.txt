@@ -1,0 +1,65 @@
+Permissions & Roles System Overview
+
+Summary
+- Multi-tenant RBAC with company scoping and per-company overrides
+- Two enforcement layers: frontend route guard and backend middleware
+- Admins have universal access; managers/employees get scoped permissions
+
+Core Tables
+- roles: id, name, slug, description
+- permissions: id, name, resource, action, description, group, sort_order
+- role_permission: pivot linking roles to permissions
+- users: core user identity; company membership handled via pivot
+- company_user: pivot linking users to companies with role_id, department_id, status, joined_at, permissions (JSON overrides)
+
+Backend Authorization
+- Tenant context: routes inside the auth + tenant group require a current company
+- Company scoping: models use HasCompany + CompanyScope for automatic filtering by company_id
+- Route middleware: permission:<name> checks the current user’s company role and overrides
+- Server check: User::hasPermissionInCompany(permissionName, companyId)
+  - Resolves companyId from request/session when not provided
+  - Admin (role_id === 1) has all permissions
+  - Checks company_user.permissions JSON overrides
+  - Checks role_permission joined with permissions
+
+Frontend Authorization
+- ContextProvider stores user and token; permissions normalized to an array
+- CompanyProvider loads/switches companies and refreshes user permissions from /user
+- usePermissions: hasPermission/hasAny/hasAll, isAdmin/isManager conveniences
+- PrivateRoute: enforces allowedRoles and requiredPermissions; supports anyPermission
+- Admin detection: user.role_id===1 or role name/slug equals “admin” bypasses permission checks
+
+Permission Groups & Examples
+- HRM: employees.*, departments.*, vacations.*, events.*
+- Projects: projects.*, kanban.*
+- Reports & Analytics: reports.*, analytics.view
+- Admin: users.*, roles.*, permissions.*, audit-logs.*
+- Settings: settings.*
+- CRM: leads.*, customers.*, communications.*
+- Finance: invoices.*, payments.*
+- Workflow: workflows.view, workflows.create, workflows.update, workflows.delete, workflows.run, workflows.publish
+
+Seeders
+- PermissionSeeder: inserts permissions with resource, action, group, sort_order
+- RolePermissionSeeder:
+  - Admin gets all permissions
+  - Manager: most permissions plus workflows.create/update/delete/run/publish
+  - Employee: essential permissions plus workflows.view and workflows.run
+- DatabaseSeeder calls both seeders; ensures initial roles/permissions provisioning
+
+Enforcement Flow
+- Login: token stored; axios adds Authorization and X-Company-ID headers
+- Company selection: CompanyProvider sets current_company_id and refreshes user permissions
+- Frontend guard: PrivateRoute verifies role/permissions before rendering routes
+- Backend guard: permission middleware blocks unauthorized access at the API
+- Model queries: HasCompany ensures data is limited to the active company
+
+Adding New Permissions
+- Define in PermissionSeeder with resource/action/group/sort_order
+- Protect routes with permission middleware: permission:<name>
+- Assign in RolePermissionSeeder for relevant roles
+- Optionally expose in UI and ensure PrivateRoute requires the new permission
+
+Notes
+- Use per-company overrides via company_user.permissions for exceptions
+- Keep permission names consistent across seeders, middleware, and frontend guards

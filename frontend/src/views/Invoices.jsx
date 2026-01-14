@@ -164,7 +164,7 @@ const Invoices = () => {
       const response = await axios.get(`/invoices/${invoice.id}`);
       setSelectedInvoice(response.data);
       setDetailModalVisible(true);
-    } catch (error) {
+    } catch {
       message.error('Failed to load invoice details');
     }
   };
@@ -201,7 +201,7 @@ const Invoices = () => {
       message.success('Invoice deleted successfully');
       fetchInvoices();
       fetchStats();
-    } catch (error) {
+    } catch {
       message.error('Failed to delete invoice');
     }
   };
@@ -212,7 +212,7 @@ const Invoices = () => {
       message.success('Invoice status updated');
       fetchInvoices();
       fetchStats();
-    } catch (error) {
+    } catch {
       message.error('Failed to update status');
     }
   };
@@ -232,7 +232,7 @@ const Invoices = () => {
       link.remove();
       
       message.success('PDF generated successfully');
-    } catch (error) {
+    } catch {
       message.warning('PDF generation not yet implemented. Showing invoice details instead.');
       handleView(invoice);
     }

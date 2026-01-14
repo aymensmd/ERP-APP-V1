@@ -27,7 +27,6 @@ import {
 } from '@ant-design/icons';
 import axios from '../axios';
 import dayjs from 'dayjs';
-import { useCompany } from '../contexts/CompanyContext';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -42,7 +41,6 @@ const KanbanBoard = ({ boardId }) => {
   const [draggedOverColumn, setDraggedOverColumn] = useState(null);
   const [users, setUsers] = useState([]);
   const [form] = Form.useForm();
-  const { currentCompany } = useCompany();
 
   const defaultColumns = ['todo', 'in_progress', 'review', 'done'];
 
@@ -143,7 +141,7 @@ const KanbanBoard = ({ boardId }) => {
       await axios.delete(`/kanban-tasks/${taskId}`);
       message.success('Task deleted successfully');
       fetchBoard();
-    } catch (error) {
+    } catch {
       message.error('Failed to delete task');
     }
   };
@@ -186,7 +184,7 @@ const KanbanBoard = ({ boardId }) => {
 
       message.success('Task moved successfully');
       fetchBoard();
-    } catch (error) {
+    } catch {
       message.error('Failed to move task');
     } finally {
       setDraggedTask(null);

@@ -36,7 +36,6 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import axios from '../axios';
-import dayjs from 'dayjs';
 import { useCompany } from '../contexts/CompanyContext';
 
 const { TextArea } = Input;
@@ -163,7 +162,7 @@ const Leads = () => {
       message.success('Lead deleted successfully');
       fetchLeads();
       fetchStats();
-    } catch (error) {
+    } catch {
       message.error('Failed to delete lead');
     }
   };
@@ -174,7 +173,7 @@ const Leads = () => {
       message.success('Lead status updated');
       fetchLeads();
       fetchStats();
-    } catch (error) {
+    } catch {
       message.error('Failed to update status');
     }
   };
@@ -323,7 +322,7 @@ const Leads = () => {
                   await axios.post(`/leads/${record.id}/convert`);
                   message.success('Lead converted to customer successfully');
                   fetchLeads();
-                } catch (error) {
+                } catch {
                   message.error('Failed to convert lead');
                 }
               }}

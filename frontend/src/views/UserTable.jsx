@@ -18,7 +18,7 @@ const UserTable = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [departmentOptions, setDepartmentOptions] = useState([]);
 
-  const { data: users, loading, error, refresh } = useRealTimeData('/employees');
+  const { data: users, loading, refresh } = useRealTimeData('/employees');
 
   // Theme styles
   const themeStyles = {
@@ -58,7 +58,10 @@ const UserTable = () => {
   };
 
   useEffect(() => {
-    fetchDepartments();
+    const timer = setTimeout(() => {
+      fetchDepartments();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleDelete = async (userId) => {

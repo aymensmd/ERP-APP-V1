@@ -50,6 +50,12 @@ class RolePermissionSeeder extends Seeder
                 'events.delete',
                 'reports.generate',
                 'reports.export',
+                // Workflow permissions for managers
+                'workflows.create',
+                'workflows.update',
+                'workflows.delete',
+                'workflows.run',
+                'workflows.publish',
             ])->pluck('id')->toArray();
             
             $managerPermissions = array_unique(array_merge($baseManagerPermissions, $additionalManagerPermissions));
@@ -77,6 +83,9 @@ class RolePermissionSeeder extends Seeder
                 'reports.view',
                 'org-chart.view',
                 'onboarding.view', // Can view their own onboarding
+                // Workflow permissions for employees
+                'workflows.view',
+                'workflows.run',
             ])->pluck('id')->toArray();
             
             $employeeRole->permissions()->sync($employeePermissions);
