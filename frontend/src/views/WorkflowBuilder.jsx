@@ -1,437 +1,355 @@
-
-import React, { useCallback, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import ReactFlow, {
-  MiniMap,
-  Controls,
-  Background,
-  addEdge,
-  useNodesState,
-  useEdgesState,
+  MiniMap, Controls, Background, addEdge, useNodesState, useEdgesState,
+  MarkerType, Handle, Position
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Card, Button, Drawer, Typography, Space, Input, message, Tooltip, Switch, Collapse, Modal, Upload } from 'antd';
-import { MailOutlined, ApiOutlined, ClockCircleOutlined, PlusOutlined, DeleteOutlined, SaveOutlined, FolderOpenOutlined, EditOutlined, CopyOutlined, UndoOutlined, RedoOutlined, LinkOutlined, BulbOutlined, ImportOutlined, ExportOutlined, PlayCircleOutlined, CloseOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons';
+import {
+  Button, Drawer, Typography, Space, Input, message, Form, Select,
+  Tag, InputNumber, Tabs, Card
+} from 'antd';
+import {
+  MailOutlined, ApiOutlined, ThunderboltOutlined, PartitionOutlined,
+  SaveOutlined, BulbOutlined, PlayCircleOutlined, RobotOutlined,
+  ClockCircleOutlined, CodeOutlined
+} from '@ant-design/icons';
 
 const { Title, Text } = Typography;
-const { Panel } = Collapse;
+const { Option } = Select;
+const { TabPane } = Tabs;
 
-const nodeTypes = {
-  // Custom node types can be added here
+const ICON_MAP = {
+  trigger: <ThunderboltOutlined />,
+  http: <ApiOutlined />,
+  email: <MailOutlined />,
+  condition: <PartitionOutlined />,
+  ai: <RobotOutlined />,
+  delay: <ClockCircleOutlined />,
+  erp: <SaveOutlined />
 };
 
-const initialNodes = [
-  {
-    id: '1',
-    type: 'input',
-    data: { label: 'Start' },
-    position: { x: 100, y: 100 },
-  },
-];
-
-const initialEdges = [];
-
-const TOOLBOX = [
-  {
-    type: 'http',
-    label: 'HTTP Request',
-    icon: <ApiOutlined />,
-    node: {
-      type: 'default',
-      data: { label: 'HTTP Request' },
-    },
-  },
-  {
-    type: 'email',
-    label: 'Send Email',
-    icon: <MailOutlined />,
-    node: {
-      type: 'default',
-      data: { label: 'Send Email' },
-    },
-  },
-  {
-    type: 'delay',
-    label: 'Delay',
-    icon: <ClockCircleOutlined />,
-    node: {
-      type: 'default',
-      data: { label: 'Delay' },
-    },
-  },
-];
-
-const WORKFLOW_STORAGE_KEY = 'workflow_builder_v1';
-const THEME_KEY = 'workflow_builder_theme';
-
-export default function WorkflowBuilder() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [selectedNode, setSelectedNode] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [workflowTitle, setWorkflowTitle] = useState('My Workflow');
-  const [editingTitle, setEditingTitle] = useState(false);
-  const dragNodeType = useRef(null);
-  const [theme, setTheme] = useState(localStorage.getItem(THEME_KEY) || 'light');
-  const [toolboxCollapsed, setToolboxCollapsed] = useState(false);
-  const [log, setLog] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [future, setFuture] = useState([]);
-  const [importModal, setImportModal] = useState(false);
-  // Theme toggle
-  const toggleTheme = () => {
-    const next = theme === 'light' ? 'dark' : 'light';
-    setTheme(next);
-    localStorage.setItem(THEME_KEY, next);
-  };
-
-  // Save/load/export/import workflow
-  useEffect(() => {
-    const saved = localStorage.getItem(WORKFLOW_STORAGE_KEY);
-    if (saved) {
-      try {
-        const { nodes, edges, title } = JSON.parse(saved);
-        if (nodes && edges) {
-          setNodes(nodes);
-          setEdges(edges);
-          if (title) setWorkflowTitle(title);
-        }
-      } catch {}
-    }
-    // eslint-disable-next-line
-  }, []);
-
-  const saveWorkflow = () => {
-    localStorage.setItem(WORKFLOW_STORAGE_KEY, JSON.stringify({ nodes, edges, title: workflowTitle }));
-    message.success('Workflow saved!');
-  };
-  const loadWorkflow = () => {
-    const saved = localStorage.getItem(WORKFLOW_STORAGE_KEY);
-    if (saved) {
-      try {
-        const { nodes, edges, title } = JSON.parse(saved);
-        setNodes(nodes);
-        setEdges(edges);
-        if (title) setWorkflowTitle(title);
-        message.success('Workflow loaded!');
-      } catch {
-        message.error('Failed to load workflow.');
-      }
-    }
-  };
-
-  const exportWorkflow = () => {
-    const data = JSON.stringify({ nodes, edges, title: workflowTitle }, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${workflowTitle.replace(/\s+/g, '_') || 'workflow'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importWorkflow = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const { nodes, edges, title } = JSON.parse(e.target.result);
-        setNodes(nodes);
-        setEdges(edges);
-        if (title) setWorkflowTitle(title);
-        message.success('Workflow imported!');
-        setImportModal(false);
-      } catch {
-        message.error('Invalid workflow file.');
-      }
-    };
-    reader.readAsText(file);
-    return false;
-  };
-
-  // Undo/redo
-  const pushHistory = () => {
-    setHistory((h) => [...h, { nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) }]);
-    setFuture([]);
-  };
-  const undo = () => {
-    if (history.length === 0) return;
-    setFuture((f) => [ { nodes, edges }, ...f ]);
-    const prev = history[history.length - 1];
-    setNodes(prev.nodes);
-    setEdges(prev.edges);
-    setHistory((h) => h.slice(0, -1));
-  };
-  const redo = () => {
-    if (future.length === 0) return;
-    const next = future[0];
-    setHistory((h) => [...h, { nodes, edges }]);
-    setNodes(next.nodes);
-    setEdges(next.edges);
-    setFuture((f) => f.slice(1));
-  };
-
-  // Log actions
-  const addLog = (msg) => setLog((l) => [msg, ...l.slice(0, 19)]);
-
-  const onConnect = useCallback((params) => {
-    pushHistory();
-    setEdges((eds) => addEdge(params, eds));
-    addLog(`Connected node ${params.source} to ${params.target}`);
-  }, [setEdges, nodes, edges]);
-
-  const onNodeClick = (_evt, node) => {
-    setSelectedNode(node);
-    setDrawerOpen(true);
-    addLog(`Selected node ${node.id}`);
-  };
-
-  const onPaneClick = () => {
-    setDrawerOpen(false);
-    setSelectedNode(null);
-  };
-
-  // Drag-and-drop from toolbox
-  const onDragStart = (event, tool) => {
-    dragNodeType.current = tool;
-    event.dataTransfer.effectAllowed = 'move';
-  };
-  const onDrop = useCallback(
-    (event) => {
-      event.preventDefault();
-      const reactFlowBounds = event.target.getBoundingClientRect();
-      const position = {
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top,
-      };
-      const tool = dragNodeType.current;
-      if (!tool) return;
-      pushHistory();
-      const id = (nodes.length + 1 + Math.floor(Math.random() * 10000)).toString();
-      setNodes((nds) => [
-        ...nds,
-        {
-          id,
-          position,
-          ...tool.node,
-          data: { ...tool.node.data, id },
-        },
-      ]);
-      addLog(`Added node ${tool.label}`);
-      dragNodeType.current = null;
-    },
-    [nodes, setNodes]
-  );
-  const onDragOver = (event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  };
-
-  // Node deletion
-  const deleteNode = (id) => {
-    pushHistory();
-    setNodes((nds) => nds.filter((n) => n.id !== id));
-    setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
-    setDrawerOpen(false);
-    setSelectedNode(null);
-    addLog(`Deleted node ${id}`);
-  };
-
-  // Edge deletion
-  const onEdgeClick = (evt, edge) => {
-    evt.stopPropagation();
-    pushHistory();
-    setEdges((eds) => eds.filter((e) => e.id !== edge.id));
-    addLog(`Deleted edge ${edge.id}`);
-  };
-
-  // Node label editing
-  const updateNodeLabel = (id, label) => {
-    pushHistory();
-    setNodes((nds) =>
-      nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, label } } : n))
-    );
-    setSelectedNode((node) => node ? { ...node, data: { ...node.data, label } } : node);
-    addLog(`Renamed node ${id} to ${label}`);
-  };
-
-  // Copy/paste
-  const copyNode = () => {
-    if (!selectedNode) return;
-    const copy = { ...selectedNode, id: (nodes.length + 1 + Math.floor(Math.random() * 10000)).toString(), position: { x: selectedNode.position.x + 40, y: selectedNode.position.y + 40 } };
-    pushHistory();
-    setNodes((nds) => [...nds, copy]);
-    addLog(`Copied node ${selectedNode.id}`);
-  };
-
-  // Run/test mode (simulate)
-  const runWorkflow = () => {
-    addLog('Simulated workflow run!');
-    message.info('Workflow run simulated. (Add real logic as needed)');
-  };
+// --- CUSTOM NODE ---
+const CustomNode = ({ data, selected }) => {
+  const isDark = data.theme === 'dark';
+  const hasError = !data.label || (data.type === 'http' && !data.settings?.url) ||
+    (data.type === 'condition' && !data.settings?.leftSide);
+  const isExecuting = data.executing;
+  const isComplete = data.completed;
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', background: theme === 'dark' ? 'linear-gradient(90deg, #23272f 60%, #1a1d23 100%)' : 'linear-gradient(90deg, #f8fafc 60%, #f0f4ff 100%)', color: theme === 'dark' ? '#fff' : '#222' }}>
-      {/* Toolbox */}
-      <div style={{ width: toolboxCollapsed ? 48 : 260, background: theme === 'dark' ? '#23272f' : '#fff', borderRight: '1px solid #e6e6e6', padding: toolboxCollapsed ? 8 : 20, boxShadow: '2px 0 8px #0001', zIndex: 2, transition: 'width 0.2s' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: toolboxCollapsed ? 'center' : 'space-between', marginBottom: toolboxCollapsed ? 0 : 18 }}>
-          {!toolboxCollapsed && <Title level={4} style={{ margin: 0, color: theme === 'dark' ? '#fff' : '#2a3a4a' }}>Workflow Toolbox</Title>}
-          <Button icon={toolboxCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} size="small" onClick={() => setToolboxCollapsed(v => !v)} style={{ marginLeft: 8 }} />
+    <div style={{
+      padding: 12,
+      borderRadius: 10,
+      background: isDark ? '#1e1e1e' : '#fff',
+      color: isDark ? '#fff' : '#222',
+      border: `2px solid ${selected ? '#1890ff' : hasError ? '#ff4d4f' : isComplete ? '#52c41a' : 'transparent'}`,
+      boxShadow: selected ? '0 8px 24px rgba(24,144,255,0.3)' : '0 4px 12px rgba(0,0,0,0.1)',
+      width: 180,
+      position: 'relative',
+      opacity: isExecuting ? 0.7 : 1,
+      transition: 'all 0.2s'
+    }}>
+      {hasError && <div style={{
+        position: 'absolute', top: -6, right: -6, background: '#ff4d4f', color: '#fff',
+        borderRadius: '50%', width: 16, height: 16, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>!</div>}
+      {isComplete && <div style={{
+        position: 'absolute', top: -6, right: -6, background: '#52c41a', color: '#fff',
+        borderRadius: '50%', width: 16, height: 16, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>✓</div>}
+
+      {data.type !== 'trigger' && (
+        <Handle type="target" position={Position.Left} style={{ background: '#1890ff', width: 10, height: 10, border: '2px solid #fff' }} />
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{
+          background: data.color, color: '#fff', padding: 6, borderRadius: 6, fontSize: 16, position: 'relative'
+        }}>
+          {ICON_MAP[data.type]}
+          {isExecuting && <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(255,255,255,0.3)', borderRadius: 6,
+            animation: 'pulse 1.5s infinite'
+          }} />}
         </div>
-        {!toolboxCollapsed && <>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          {TOOLBOX.map((tool) => (
-            <Card
-              key={tool.type}
-              size="small"
-              hoverable
-              style={{ marginBottom: 10, cursor: 'grab', borderRadius: 10, border: '1px solid #e6e6e6', background: theme === 'dark' ? '#23272f' : '#f7faff', color: theme === 'dark' ? '#fff' : '#222', transition: 'background 0.2s' }}
-              draggable
-              onDragStart={(e) => onDragStart(e, tool)}
-              onClick={() => {
-                // fallback for click-to-add
-                pushHistory();
-                const id = (nodes.length + 1 + Math.floor(Math.random() * 10000)).toString();
-                setNodes((nds) => [
-                  ...nds,
-                  {
-                    id,
-                    position: { x: 200 + Math.random() * 200, y: 100 + Math.random() * 200 },
-                    ...tool.node,
-                    data: { ...tool.node.data, id },
-                  },
-                ]);
-                addLog(`Added node ${tool.label}`);
-              }}
-            >
-              <Space>
-                {tool.icon}
-                <Text>{tool.label}</Text>
-                <Tooltip title="Drag to canvas or click to add"><Button icon={<PlusOutlined />} size="small" /></Tooltip>
-              </Space>
-            </Card>
-          ))}
-        </Space>
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Button icon={<SaveOutlined />} type="primary" style={{ marginRight: 8 }} onClick={saveWorkflow}>Save</Button>
-          <Button icon={<FolderOpenOutlined />} onClick={loadWorkflow} style={{ marginRight: 8 }}>Load</Button>
-          <Tooltip title="Export Workflow"><Button icon={<ExportOutlined />} onClick={exportWorkflow} style={{ marginRight: 8 }} /></Tooltip>
-          <Tooltip title="Import Workflow"><Button icon={<ImportOutlined />} onClick={() => setImportModal(true)} /></Tooltip>
+        <div style={{ overflow: 'hidden', flex: 1 }}>
+          <Text strong style={{ fontSize: 12 }} ellipsis>{data.label}</Text>
+          <div style={{ fontSize: 10, opacity: 0.5 }}>{data.type.toUpperCase()}</div>
         </div>
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Tooltip title="Undo"><Button icon={<UndoOutlined />} onClick={undo} style={{ marginRight: 8 }} /></Tooltip>
-          <Tooltip title="Redo"><Button icon={<RedoOutlined />} onClick={redo} /></Tooltip>
-        </div>
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Tooltip title="Toggle dark/light mode"><Switch checkedChildren={<BulbOutlined />} unCheckedChildren={<BulbOutlined />} checked={theme === 'dark'} onChange={toggleTheme} /></Tooltip>
-        </div>
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Tooltip title="Simulate workflow run"><Button icon={<PlayCircleOutlined />} onClick={runWorkflow} type="dashed" /></Tooltip>
-        </div>
-        </>}
       </div>
-      {/* Canvas and log */}
-      <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', background: theme === 'dark' ? '#23272f' : undefined }}>
-        {/* Header */}
-        <div style={{ padding: '18px 32px 8px 32px', background: theme === 'dark' ? 'rgba(30,32,38,0.98)' : 'rgba(255,255,255,0.95)', borderBottom: '1px solid #e6e6e6', display: 'flex', alignItems: 'center', zIndex: 1 }}>
-          {editingTitle ? (
-            <Input
-              value={workflowTitle}
-              onChange={e => setWorkflowTitle(e.target.value)}
-              onBlur={() => setEditingTitle(false)}
-              onPressEnter={() => setEditingTitle(false)}
-              style={{ fontSize: 22, fontWeight: 600, width: 320 }}
-              maxLength={40}
-              autoFocus
-            />
-          ) : (
-            <Title level={3} style={{ margin: 0, color: theme === 'dark' ? '#fff' : '#2a3a4a', fontWeight: 700, cursor: 'pointer' }} onClick={() => setEditingTitle(true)}>
-              <EditOutlined style={{ marginRight: 8, color: '#b3b3b3' }} />{workflowTitle}
-            </Title>
-          )}
-        </div>
-        {/* React Flow Canvas */}
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            onPaneClick={onPaneClick}
-            fitView
-            nodeTypes={nodeTypes}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            style={{ background: theme === 'dark' ? 'linear-gradient(135deg, #23272f 60%, #1a1d23 100%)' : 'linear-gradient(135deg, #f8fafc 60%, #e6f0ff 100%)', borderRadius: 0 }}
-            onEdgeClick={onEdgeClick}
-          >
-            <MiniMap nodeColor={n => n.type === 'input' ? '#1890ff' : '#13c2c2'} />
-            <Controls />
-            <Background gap={16} color={theme === 'dark' ? '#444' : '#e6e6e6'} />
-          </ReactFlow>
-        </div>
-        {/* Mini log panel */}
-        <div style={{ position: 'absolute', right: 24, bottom: 24, width: 320, background: theme === 'dark' ? '#23272f' : '#fff', border: '1px solid #e6e6e6', borderRadius: 8, boxShadow: '0 2px 12px #0002', zIndex: 10, maxHeight: 220, overflow: 'auto', fontSize: 13 }}>
-          <div style={{ padding: '8px 12px', borderBottom: '1px solid #e6e6e6', fontWeight: 600, background: theme === 'dark' ? '#23272f' : '#f7faff' }}>
-            <LinkOutlined style={{ marginRight: 6 }} />Workflow Log
-            <Button icon={<CloseOutlined />} size="small" style={{ float: 'right', marginTop: 2 }} onClick={() => setLog([])} />
-          </div>
-          <div style={{ padding: 8 }}>
-            {log.length === 0 ? <Text type="secondary">No actions yet.</Text> : log.map((l, i) => <div key={i}>{l}</div>)}
-          </div>
-        </div>
-        {/* Node Config Drawer */}
-        <Drawer
-          title={selectedNode ? `Configure: ${selectedNode.data.label}` : ''}
-          placement="right"
-          onClose={() => setDrawerOpen(false)}
-          open={drawerOpen}
-          width={360}
-          styles={{ body: { background: theme === 'dark' ? '#23272f' : '#fff', color: theme === 'dark' ? '#fff' : '#222' } }}
-        >
-          {selectedNode ? (
-            <div>
-              <Text strong>ID:</Text> <Text code>{selectedNode.id}</Text>
-              <br />
-              <Text strong>Type:</Text> <Text>{selectedNode.type}</Text>
-              <br />
-              <div style={{ margin: '16px 0' }}>
-                <Text strong>Label:</Text>
-                <Input
-                  value={selectedNode.data.label}
-                  onChange={e => updateNodeLabel(selectedNode.id, e.target.value)}
-                  style={{ marginTop: 4, width: '100%' }}
-                  maxLength={32}
-                />
+
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{
+          background: '#1890ff', width: 10, height: 10, border: '2px solid #fff'
+        }}
+        id={data.type === 'trigger' ? 'single' : undefined}
+      />
+
+      <style>{`
+        @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.5;} }
+      `}</style>
+    </div>
+  );
+};
+
+const nodeTypes = { workflowNode: CustomNode };
+
+const TOOLBOX = [
+  { type: 'trigger', label: 'Start Trigger', color: '#ff4d4f', desc: 'Manual/Cron' },
+  { type: 'erp', label: 'ERP Action', color: '#722ed1', desc: 'Internal Logic' },
+  { type: 'http', label: 'HTTP Request', color: '#1890ff', desc: 'External API' },
+  { type: 'condition', label: 'Logic Branch', color: '#faad14', desc: 'If/Else' },
+  { type: 'ai', label: 'AI Processor', color: '#eb2f96', desc: 'LLM Analysis' },
+  { type: 'email', label: 'Send Email', color: '#13c2c2', desc: 'Notifications' },
+  { type: 'delay', label: 'Wait/Delay', color: '#52c41a', desc: 'Pause Flow' },
+];
+
+// --- NODE CONFIGURATION FIELDS ---
+const NODE_CONFIG_FIELDS = {
+  trigger: [
+    { label: 'Label', name: 'label', component: <Input placeholder="Node label..." />, rules: [{ required: true }] },
+    { label: 'Schedule', name: 'schedule', component: <Input placeholder="Cron / Manual" /> }
+  ],
+  http: [
+    { label: 'Label', name: 'label', component: <Input placeholder="Node label..." />, rules: [{ required: true }] },
+    { label: 'URL', name: 'url', component: <Input placeholder="https://api.example.com" />, rules: [{ required: true }] },
+    { label: 'Method', name: 'method', component: <Select><Option value="GET">GET</Option><Option value="POST">POST</Option></Select> },
+    { label: 'Headers', name: 'headers', component: <Input placeholder='{"Authorization":"Bearer ..."}' /> },
+    { label: 'Body', name: 'body', component: <Input.TextArea placeholder='{"key":"value"}' /> }
+  ],
+  condition: [
+    { label: 'Label', name: 'label', component: <Input placeholder="Node label..." />, rules: [{ required: true }] },
+    { label: 'Left Operand', name: 'leftSide', component: <Input placeholder="{{context.outputs.node_id.value}}" />, rules: [{ required: true }] },
+    {
+      label: 'Operator', name: 'operator', component: <Select>
+        <Option value="eq">= Equals</Option>
+        <Option value="neq">≠ Not Equals</Option>
+        <Option value="gt">&gt; Greater Than</Option>
+        <Option value="gte">≥ Greater or Equal</Option>
+        <Option value="lt">&lt; Less Than</Option>
+        <Option value="lte">≤ Less or Equal</Option>
+        <Option value="contains">Contains</Option>
+      </Select>, rules: [{ required: true }]
+    },
+    { label: 'Right Operand', name: 'rightSide', component: <Input placeholder="100" />, rules: [{ required: true }] }
+  ],
+  ai: [
+    { label: 'Label', name: 'label', component: <Input placeholder="Node label..." />, rules: [{ required: true }] },
+    { label: 'Prompt', name: 'prompt', component: <Input.TextArea placeholder="AI prompt..." />, rules: [{ required: true }] },
+    { label: 'Temperature', name: 'temperature', component: <InputNumber min={0} max={1} step={0.1} /> }
+  ],
+  email: [
+    { label: 'Label', name: 'label', component: <Input placeholder="Node label..." />, rules: [{ required: true }] },
+    { label: 'Recipient', name: 'recipient', component: <Input placeholder="email@example.com" />, rules: [{ required: true }] },
+    { label: 'Subject', name: 'subject', component: <Input placeholder="Email Subject" /> },
+    { label: 'Body', name: 'body', component: <Input.TextArea placeholder="Email Body" /> }
+  ],
+  delay: [
+    { label: 'Label', name: 'label', component: <Input placeholder="Node label..." />, rules: [{ required: true }] },
+    { label: 'Delay (ms)', name: 'delay', component: <InputNumber min={0} step={100} />, rules: [{ required: true }] }
+  ],
+  erp: [
+    { label: 'Label', name: 'label', component: <Input placeholder="Node label..." />, rules: [{ required: true }] },
+    { label: 'Module', name: 'module', component: <Input placeholder="ERP module name..." /> },
+    { label: 'Action', name: 'action', component: <Input placeholder="Action name..." /> }
+  ]
+};
+
+export default function WorkflowBuilder() {
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [theme, setTheme] = useState('light');
+  const [form] = Form.useForm();
+  const [executionLog, setExecutionLog] = useState([]);
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  const getNodeOutputs = (type) => {
+    switch (type) {
+      case 'http': return ['response', 'status', 'headers'];
+      case 'condition': return ['result'];
+      case 'ai': return ['output', 'confidence'];
+      case 'erp': return ['result', 'recordId'];
+      case 'trigger': return ['payload', 'timestamp'];
+      case 'email': return ['status', 'messageId'];
+      case 'delay': return ['completed'];
+      default: return ['output'];
+    }
+  };
+
+  const availableVariables = useMemo(() => {
+    if (!selectedNode) return [];
+    const ancestors = new Set();
+    const queue = [selectedNode.id];
+    while (queue.length) {
+      const currentId = queue.shift();
+      edges.filter(e => e.target === currentId).forEach(e => {
+        if (!ancestors.has(e.source)) { ancestors.add(e.source); queue.push(e.source); }
+      });
+    }
+    return nodes
+      .filter(n => ancestors.has(n.id) || n.data.type === 'trigger')
+      .map(n => ({ id: n.id, label: n.data.label, type: n.data.type, outputs: getNodeOutputs(n.data.type) }));
+  }, [nodes, edges, selectedNode]);
+
+  const onConnect = useCallback((params) => {
+    const source = nodes.find(n => n.id === params.source);
+    const isCondition = source?.data.type === 'condition';
+    const outCount = edges.filter(e => e.source === params.source).length;
+
+    setEdges(eds => addEdge({
+      ...params,
+      label: isCondition ? (outCount === 0 ? 'TRUE' : 'FALSE') : '',
+      animated: !isCondition,
+      style: { stroke: isCondition ? (outCount === 0 ? '#52c41a' : '#ff4d4f') : '#1890ff', strokeWidth: 2 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#1890ff' },
+    }, eds));
+  }, [nodes, edges]);
+
+  const onDrop = (event) => {
+    event.preventDefault();
+    const reactFlowBounds = document.querySelector('.react-flow-wrapper').getBoundingClientRect();
+    const tool = JSON.parse(event.dataTransfer.getData('application/reactflow'));
+    const position = { x: event.clientX - reactFlowBounds.left - 90, y: event.clientY - reactFlowBounds.top - 20 };
+    const newNode = { id: `${tool.type}_${Math.random().toString(36).substr(2, 5)}`, type: 'workflowNode', position, data: { ...tool, theme, settings: {} } };
+    setNodes(nds => nds.concat(newNode));
+    message.success(`${tool.label} added`, 1);
+  };
+
+  const updateNodeData = (values) => {
+    if (!selectedNode) return;
+    setNodes(nds => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, ...values, settings: values, completed: false } } : n));
+  };
+
+  const simulateExecution = async () => {
+    const triggerNode = nodes.find(n => n.data.type === 'trigger');
+    if (!triggerNode) { message.error('No trigger node found'); return; }
+    setIsSimulating(true);
+    setExecutionLog([]);
+    setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, executing: false, completed: false } })));
+
+    const executeNode = async (nodeId, depth = 0) => {
+      if (depth > 50) return;
+      setNodes(nds => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, executing: true } } : n));
+      await new Promise(r => setTimeout(r, 600));
+      const node = nodes.find(n => n.id === nodeId);
+      setExecutionLog(log => [...log, { nodeId, label: node.data.label, type: node.data.type, time: new Date().toLocaleTimeString() }]);
+      setNodes(nds => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, executing: false, completed: true } } : n));
+      const outgoingEdges = edges.filter(e => e.source === nodeId);
+      if (node.data.type === 'condition') { if (outgoingEdges.length) await executeNode(outgoingEdges[0].target, depth + 1); }
+      else { for (const e of outgoingEdges) { await executeNode(e.target, depth + 1); } }
+    };
+
+    await executeNode(triggerNode.id);
+    setIsSimulating(false);
+    message.success('Simulation complete');
+  };
+
+  const validateWorkflow = () => {
+    const errors = [];
+    const triggerNodes = nodes.filter(n => n.data.type === 'trigger');
+    if (triggerNodes.length === 0) errors.push('No trigger node');
+    if (triggerNodes.length > 1) errors.push('Multiple trigger nodes');
+    nodes.forEach(node => {
+      if (!node.data.label) errors.push(`Node ${node.id} missing label`);
+      if (node.data.type === 'http' && !node.data.settings?.url) errors.push(`HTTP node "${node.data.label}" missing URL`);
+      if (node.data.type === 'condition' && !node.data.settings?.leftSide) errors.push(`Condition node "${node.data.label}" missing condition`);
+    });
+    if (errors.length) { message.error(`Validation failed: ${errors[0]}`, 3); return false; }
+    message.success('Workflow is valid ✓');
+    return true;
+  };
+
+  const DataPicker = ({ targetField }) => (
+    <div style={{ marginTop: 8, padding: '10px', background: '#f5f5f5', borderRadius: 6, border: '1px dashed #d9d9d9' }}>
+      <Text type="secondary" style={{ fontSize: 11 }}><CodeOutlined /> Reference Variables:</Text>
+      {availableVariables.length === 0 ? <Text type="secondary" style={{ fontSize: 11 }}>No upstream nodes yet</Text> :
+        <div style={{ maxHeight: 120, overflowY: 'auto' }}>
+          {availableVariables.map(v => (
+            <div key={v.id} style={{ marginBottom: 8 }}>
+              <Text strong style={{ fontSize: 11 }}>{v.label}</Text>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {v.outputs.map(out => (
+                  <Tag key={out} color="blue" style={{ cursor: 'pointer', fontSize: 10 }} onClick={() => {
+                    const current = form.getFieldValue(targetField) || '';
+                    form.setFieldsValue({ [targetField]: `${current}{{context.outputs.${v.id}.${out}}}` });
+                    updateNodeData(form.getFieldsValue());
+                    message.success('Variable inserted', 1);
+                  }}>{out}</Tag>
+                ))}
               </div>
+            </div>
+          ))}
+        </div>
+      }
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', padding: 20, background: theme === 'dark' ? '#141414' : '#f0f2f5', gap: 20 }}>
+      {/* Toolbox */}
+      <Card style={{ width: 260, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+        <Title level={5} style={{ marginBottom: 12 }}>Workflow Nodes</Title>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          {TOOLBOX.map(tool => (
+            <div key={tool.type} draggable onDragStart={e => e.dataTransfer.setData('application/reactflow', JSON.stringify(tool))}
+              style={{ padding: 10, borderRadius: 8, border: '1px solid #f0f0f0', cursor: 'grab', background: '#fff' }}>
               <Space>
-                <Button icon={<CopyOutlined />} onClick={copyNode}>Copy</Button>
-                <Button danger icon={<DeleteOutlined />} onClick={() => deleteNode(selectedNode.id)} style={{ marginTop: 0 }}>Delete Node</Button>
+                <div style={{ color: tool.color, fontSize: 18 }}>{ICON_MAP[tool.type]}</div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{tool.label}</div>
+                  <div style={{ fontSize: 11, opacity: 0.5 }}>{tool.desc}</div>
+                </div>
               </Space>
             </div>
-          ) : null}
-        </Drawer>
-        {/* Import Modal */}
-        <Modal
-          title="Import Workflow"
-          open={importModal}
-          onCancel={() => setImportModal(false)}
-          footer={null}
-        >
-          <Upload.Dragger
-            accept=".json"
-            beforeUpload={importWorkflow}
-            showUploadList={false}
-            style={{ padding: 24 }}
+          ))}
+        </Space>
+      </Card>
+
+      {/* Canvas */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 15 }}>
+        <div style={{ background: '#fff', padding: '12px 20px', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Space size="large"><Text strong style={{ fontSize: 16 }}>Automation Builder</Text></Space>
+          <Space>
+            <Button type="primary" ghost icon={<PlayCircleOutlined />} onClick={simulateExecution} loading={isSimulating}>{isSimulating ? 'Running...' : 'Dry Run'}</Button>
+            <Button icon={<BulbOutlined />} onClick={validateWorkflow}>Validate</Button>
+          </Space>
+        </div>
+
+        <div className="react-flow-wrapper" style={{ flex: 1, background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid #e8e8e8' }}>
+          <ReactFlow
+            nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+            onConnect={onConnect} nodeTypes={nodeTypes} onDrop={onDrop} onDragOver={e => e.preventDefault()}
+            onNodeClick={(_, node) => { setSelectedNode(node); setDrawerOpen(true); form.resetFields(); form.setFieldsValue({ ...node.data.settings, label: node.data.label }); }}
+            fitView
           >
-            <p className="ant-upload-drag-icon">
-              <ImportOutlined style={{ fontSize: 32 }} />
-            </p>
-            <p className="ant-upload-text">Click or drag a workflow JSON file to import</p>
-          </Upload.Dragger>
-        </Modal>
+            <Background color="#aaa" gap={20} />
+            <Controls />
+          </ReactFlow>
+        </div>
       </div>
+
+      {/* Node Settings Drawer */}
+      <Drawer title="Configure Node" width={480} open={drawerOpen} onClose={() => { setDrawerOpen(false); form.resetFields(); }}>
+        {selectedNode && (
+          <Form layout="vertical" form={form} initialValues={{ ...selectedNode.data.settings, label: selectedNode.data.label }} onValuesChange={(_, values) => updateNodeData(values)}>
+            <Tabs defaultActiveKey="1" size="small">
+              <TabPane tab="Configuration" key="1">
+                {NODE_CONFIG_FIELDS[selectedNode.data.type]?.map(field => (
+                  <Form.Item key={field.name} label={field.label} name={field.name} rules={field.rules || []}>
+                    {field.component}
+                  </Form.Item>
+                ))}
+              </TabPane>
+            </Tabs>
+            <DataPicker targetField="outputs" />
+          </Form>
+        )}
+      </Drawer>
     </div>
   );
 }
