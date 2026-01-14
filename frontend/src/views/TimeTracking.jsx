@@ -10,7 +10,6 @@ const TimeTracking = () => {
   const { theme } = useStateContext();
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
-  const [startTime, setStartTime] = useState(null);
   const [logs, setLogs] = useState([]);
   const timerRef = useRef(null);
   const [elapsed, setElapsed] = useState(0);
@@ -38,14 +37,13 @@ const TimeTracking = () => {
 
   useEffect(() => {
     fetchSessions();
-    // Poll for active session updates every 5 seconds if running
     const interval = setInterval(() => {
       if (running || activeSession) {
         fetchSessions();
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [running, activeSession]);
 
   useEffect(() => {
     if (activeSession) {
@@ -82,7 +80,7 @@ const TimeTracking = () => {
 
   const start = async () => {
     try {
-      const response = await axios.post('/time-tracking/sessions', { action: 'start' });
+      await axios.post('/time-tracking/sessions', { action: 'start' });
       message.success('Time tracking started');
       await fetchSessions();
     } catch (error) {

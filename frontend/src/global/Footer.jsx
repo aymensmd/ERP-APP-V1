@@ -7,7 +7,7 @@ import {
   MailOutlined,
   GlobalOutlined 
 } from '@ant-design/icons';
-import { useStateContext } from './contexts/ContextProvider';
+import { useStateContext } from '../contexts/ContextProvider';
 
 const { Footer } = Layout;
 const { Text, Link } = Typography;
@@ -64,7 +64,7 @@ const AppFooter = () => {
 
         {/* Version Info */}
         <Text type="secondary" style={{ fontSize: 12 }}>
-          v{process.env.REACT_APP_VERSION || '1.0.0'}
+          v{import.meta.env.VITE_APP_VERSION || '1.0.0'}
         </Text>
       </Space>
     </Footer>

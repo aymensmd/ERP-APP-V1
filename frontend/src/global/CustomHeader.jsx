@@ -29,7 +29,6 @@ import {
   Select
 } from 'antd';
 import React, { useEffect, useState } from 'react';
-import comunikcrm from '../assets/comunikcrm.png';
 import AnyNamecrm from '../assets/AnyNamecrm.png';
 import { useNavigate } from 'react-router-dom';
 import { useStateContext } from '../contexts/ContextProvider';
@@ -39,7 +38,7 @@ import axios from '../axios';
 const { Title, Text } = Typography;
 
 const CustomHeader = () => {
-  const { user, token, setToken, theme, setTheme, logout } = useStateContext();
+  const { user, token, theme, setTheme, logout } = useStateContext();
   const { currentCompany, companies, switchCompany, loading: companyLoading } = useCompany();
   const navigate = useNavigate();
   const [eventNotifications, setEventNotifications] = useState([]);

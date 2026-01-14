@@ -46,7 +46,6 @@ const Onboarding = () => {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [checklist, setChecklist] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [checklistLoading, setChecklistLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [templateModalVisible, setTemplateModalVisible] = useState(false);
@@ -72,15 +71,12 @@ const Onboarding = () => {
   }, [selectedEmployee]);
 
   const fetchEmployees = async () => {
-    setLoading(true);
     try {
       const response = await axios.get('/employees');
       setEmployees(Array.isArray(response.data) ? response.data : (response.data.data || []));
     } catch (error) {
       console.error('Failed to fetch employees:', error);
       message.error('Failed to load employees');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -207,7 +203,7 @@ const Onboarding = () => {
       await axios.put(`/onboarding/items/${item.id}`, { status: newStatus });
       message.success('Status updated successfully');
       fetchChecklist(selectedEmployee.id);
-    } catch (error) {
+    } catch {
       message.error('Failed to update status');
     }
   };
@@ -217,7 +213,7 @@ const Onboarding = () => {
       await axios.delete(`/onboarding/items/${itemId}`);
       message.success('Item deleted successfully');
       fetchChecklist(selectedEmployee.id);
-    } catch (error) {
+    } catch {
       message.error('Failed to delete item');
     }
   };
@@ -261,8 +257,6 @@ const Onboarding = () => {
 
   const progress = calculateProgress();
   const completedCount = checklist.filter(item => item.status === 'completed').length;
-  const pendingCount = checklist.filter(item => item.status === 'pending').length;
-  const inProgressCount = checklist.filter(item => item.status === 'in_progress').length;
 
   const checklistColumns = [
     {

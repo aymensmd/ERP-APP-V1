@@ -25,6 +25,9 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\WorkflowController;
+use App\Http\Controllers\WorkflowExecutionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -128,7 +131,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/time-tracking/sessions', [TimeTrackingController::class, 'index']);
     Route::post('/time-tracking/sessions', [TimeTrackingController::class, 'store']);
     Route::delete('/time-tracking/sessions/{id}', [TimeTrackingController::class, 'destroy']);
-    
+
+    // Attendance routes
+    Route::get('/attendance/records', [AttendanceController::class, 'index']);
+    Route::post('/attendance/clock-in', [AttendanceController::class, 'clockIn']);
+    Route::post('/attendance/clock-out', [AttendanceController::class, 'clockOut']);
+    Route::post('/attendance/records/{id}/approve', [AttendanceController::class, 'approve'])->middleware('permission:attendance.approve|time-tracking.manage');
+
     // Analytics routes
     Route::get('/analytics', [AnalyticsController::class, 'index']);
     
@@ -149,6 +158,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/certifications/{certificationId}', [EmployeeProfileController::class, 'updateCertification']);
     Route::delete('/certifications/{certificationId}', [EmployeeProfileController::class, 'deleteCertification']);
     Route::get('/organizational-chart', [EmployeeProfileController::class, 'getOrganizationalChart'])->middleware('permission:org-chart.view');
+    
+    // Workflow routes
+    Route::get('/workflows', [WorkflowController::class, 'index'])->middleware('permission:workflows.view');
+    Route::post('/workflows', [WorkflowController::class, 'store'])->middleware('permission:workflows.create');
+    Route::get('/workflows/{workflow}', [WorkflowController::class, 'show'])->middleware('permission:workflows.view');
+    Route::put('/workflows/{workflow}', [WorkflowController::class, 'update'])->middleware('permission:workflows.update');
+    Route::delete('/workflows/{workflow}', [WorkflowController::class, 'destroy'])->middleware('permission:workflows.delete');
+    Route::post('/workflows/{workflow}/graph', [WorkflowController::class, 'saveGraph'])->middleware('permission:workflows.update');
+    Route::post('/workflows/{workflow}/run', [WorkflowController::class, 'run'])->middleware('permission:workflows.run');
+    Route::post('/workflows/{workflow}/publish', [WorkflowController::class, 'publish'])->middleware('permission:workflows.publish');
+    Route::post('/workflows/{workflow}/unpublish', [WorkflowController::class, 'unpublish'])->middleware('permission:workflows.publish');
+    Route::get('/workflows/{workflow}/versions', [WorkflowController::class, 'versions'])->middleware('permission:workflows.view');
+    Route::get('/workflows/{workflow}/versions/{version}', [WorkflowController::class, 'versionShow'])->middleware('permission:workflows.view');
+    Route::post('/workflows/{workflow}/versions/{version}/rollback', [WorkflowController::class, 'rollback'])->middleware('permission:workflows.update');
+    Route::get('/workflow-executions/{execution}', [WorkflowExecutionController::class, 'show'])->middleware('permission:workflows.view');
+    Route::get('/workflow-executions/{execution}/logs', [WorkflowExecutionController::class, 'logs'])->middleware('permission:workflows.view');
     
     // Leads routes (CRM)
     Route::get('/leads', [LeadController::class, 'index'])->middleware('permission:leads.view');

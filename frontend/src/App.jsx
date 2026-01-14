@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Layout, Button } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import CustomHeader from './global/CustomHeader';
@@ -11,7 +11,6 @@ import WelcomePage from './views/WelcomePage';
 const { Header, Content, Footer, Sider } = Layout;
 
 const App = () => {
-  const [collapsed, setCollapsed] = useState(true);
   const { theme } = useStateContext();
 
   useEffect(() => {

@@ -141,7 +141,7 @@ const VacData = ({ setTotalVacationDays }) => {
 
   const handleUpdateFormSubmit = async (values) => {
     try {
-      const response = await axios.put(
+      await axios.put(
         `/vacations/${selectedVacation.id}`,
         {
           ...values,

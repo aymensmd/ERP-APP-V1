@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Table, Tag, Space, Button, Select, Popconfirm, message, Modal, Form, Input, DatePicker, Tooltip } from 'antd';
 import { EditOutlined, DeleteOutlined, FilterOutlined } from '@ant-design/icons';
 import { useRealTimeData } from '../../hooks/useRealTimeData';
-import { useAuth } from '../../context/AuthContext';
 import axios from '../../axios';
 import dayjs from 'dayjs';
 
@@ -17,13 +16,12 @@ const STATUS_COLORS = {
 
 const VacationList = () => {
   const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
   const [dateRange, setDateRange] = useState(null);
   const [selectedVacation, setSelectedVacation] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
   const { data: vacations, loading, error, refresh } = useRealTimeData('/vacations');
-  const { user } = useAuth();
+  // const { user } = useAuth();
 
   const handleDelete = async (id) => {
     try {
@@ -131,6 +129,23 @@ const VacationList = () => {
     },
   ];
 
+  // Prepare filtered data
+  const filteredVacations = React.useMemo(() => {
+    let filtered = Array.isArray(vacations) ? vacations : [];
+    if (statusFilter) {
+      filtered = filtered.filter(v => v.status === statusFilter);
+    }
+    if (dateRange && Array.isArray(dateRange) && dateRange[0] && dateRange[1]) {
+      const [start, end] = dateRange;
+      filtered = filtered.filter(v => {
+        const vStart = dayjs(v.start_date);
+        const vEnd = dayjs(v.end_date);
+        return vStart.isSameOrAfter(start, 'day') && vEnd.isSameOrBefore(end, 'day');
+      });
+    }
+    return filtered;
+  }, [vacations, statusFilter, dateRange]);
+
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -156,7 +171,7 @@ const VacationList = () => {
       </div>
       <Table
         columns={columns}
-        dataSource={vacations}
+        dataSource={filteredVacations}
         loading={loading}
         rowKey="id"
         bordered

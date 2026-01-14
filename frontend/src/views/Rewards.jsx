@@ -146,7 +146,7 @@ const Rewards = () => {
         >
           <List
             dataSource={items}
-            renderItem={(i, index) => (
+            renderItem={i => (
               <List.Item
                 style={{
                   padding: '16px',

@@ -119,7 +119,7 @@ const { theme, token: contextToken, user } = useStateContext(); // Get user from
       console.log('Type value:', JSON.stringify(requestData.type));
       console.log('Type length:', requestData.type?.length);
       
-      const response = await axios.post('/vacations', requestData);
+      await axios.post('/vacations', requestData);
 
       message.success('Request submitted successfully');
       setHasPendingVacation(true);

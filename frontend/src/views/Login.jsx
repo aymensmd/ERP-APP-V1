@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button, Card, Checkbox, Form, Input, message } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStateContext } from '../contexts/ContextProvider';
@@ -6,7 +6,6 @@ import { useCompany } from '../contexts/CompanyContext';
 import axios from '../axios';
 import { MailOutlined, LockOutlined } from '@ant-design/icons';
 import AnyNamecrm from '../assets/AnyNamecrm.png';
-import crm from '../assets/crm.png';
 import './login.css';
 
 export default function Login() {

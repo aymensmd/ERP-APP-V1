@@ -87,7 +87,7 @@ const KanbanBoards = () => {
       setEditingBoard(null);
       form.resetFields();
       fetchBoards();
-    } catch (error) {
+    } catch {
       message.error('Failed to save board');
     }
   };
@@ -100,7 +100,7 @@ const KanbanBoards = () => {
         setSelectedBoard(null);
       }
       fetchBoards();
-    } catch (error) {
+    } catch {
       message.error('Failed to delete board');
     }
   };

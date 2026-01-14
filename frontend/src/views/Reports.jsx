@@ -3,7 +3,6 @@ import { Typography, Card, Select, Button, Space, DatePicker, message, ConfigPro
 import { DownloadOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useStateContext } from '../contexts/ContextProvider';
 import axios from '../axios';
-import dayjs from 'dayjs';
 
 const { Title, Paragraph, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -11,8 +10,7 @@ const { Option } = Select;
 
 const Reports = () => {
   const { theme } = useStateContext();
-  const [type, setType] = useState('attendance');
-  const [range, setRange] = useState(null);
+  const defaultType = 'attendance';
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [form] = Form.useForm();
@@ -40,7 +38,7 @@ const Reports = () => {
     try {
       setLoading(true);
       const payload = {
-        type: values.type || type,
+        type: values.type || defaultType,
         start_date: values.dateRange?.[0]?.format('YYYY-MM-DD'),
         end_date: values.dateRange?.[1]?.format('YYYY-MM-DD'),
       };
@@ -97,7 +95,7 @@ const Reports = () => {
             background: colors.cardBg
           }}
         >
-          <Form form={form} layout="vertical" onFinish={generate} initialValues={{ type: type }}>
+          <Form form={form} layout="vertical" onFinish={generate} initialValues={{ type: defaultType }}>
             <Row gutter={[24, 24]}>
               <Col xs={24} sm={12} md={8}>
                 <Form.Item 

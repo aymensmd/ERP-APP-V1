@@ -21,7 +21,7 @@ const { Title, Text, Paragraph } = Typography;
 
 const WelcomePage = () => {
   const { user, theme } = useStateContext();
-  const { hasPermission, isAdmin, isManager } = usePermissions();
+  const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userContext, setUserContext] = useState(null);

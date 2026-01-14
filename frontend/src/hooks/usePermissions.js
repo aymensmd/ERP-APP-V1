@@ -50,8 +50,8 @@ export const usePermissions = () => {
   const hasPermission = (permissionName) => {
     if (!permissionName) return false;
     
-    // Admin (role_id === 1) has all permissions
-    if (user?.role_id === 1) {
+    // Admin has all permissions
+    if (isAdmin()) {
       return true;
     }
     
@@ -75,7 +75,7 @@ export const usePermissions = () => {
     }
     
     // Admin has all permissions
-    if (user?.role_id === 1) {
+    if (isAdmin()) {
       return true;
     }
     
@@ -99,7 +99,7 @@ export const usePermissions = () => {
     }
     
     // Admin has all permissions
-    if (user?.role_id === 1) {
+    if (isAdmin()) {
       return true;
     }
     
@@ -117,7 +117,9 @@ export const usePermissions = () => {
    * @returns {boolean}
    */
   const isAdmin = () => {
-    return user?.role_id === 1;
+    const roleName = user?.role?.name?.toLowerCase();
+    const roleSlug = user?.role?.slug?.toLowerCase();
+    return user?.role_id === 1 || roleName === 'admin' || roleSlug === 'admin';
   };
 
   /**

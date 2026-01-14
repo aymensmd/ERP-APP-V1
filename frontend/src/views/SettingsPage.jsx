@@ -105,7 +105,7 @@ const SettingsPage = () => {
 
   const handlePasswordOk = () => {
     form.validateFields(['currentPassword', 'newPassword', 'confirmPassword'])
-      .then(values => {
+      .then(() => {
         setPasswordModalVisible(false);
         message.success('Password changed successfully!');
         form.resetFields();
@@ -115,7 +115,7 @@ const SettingsPage = () => {
 
   const handleEmailOk = () => {
     form.validateFields(['email'])
-      .then(values => {
+      .then(() => {
         setEmailModalVisible(false);
         message.success('Email updated successfully!');
         form.resetFields();

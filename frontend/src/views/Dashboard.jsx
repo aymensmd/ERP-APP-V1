@@ -34,8 +34,8 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 export default function Dashboard() {
-  const { theme, user } = useStateContext();
-  const { hasPermission, hasAnyPermission, isAdmin, isManager } = usePermissions();
+  const { theme } = useStateContext();
+  const { hasPermission, hasAnyPermission, isManager } = usePermissions();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState(null);

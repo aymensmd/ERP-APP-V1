@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Table,
@@ -53,21 +53,9 @@ const Shifts = () => {
   const [assignmentForm] = Form.useForm();
   const { currentCompany } = useCompany();
 
-  useEffect(() => {
-    if (currentCompany) {
-      fetchShifts();
-      fetchEmployees();
-      fetchAssignments();
-    }
-  }, [currentCompany]);
+  
 
-  useEffect(() => {
-    if (currentCompany) {
-      fetchAssignments();
-    }
-  }, [selectedDate]);
-
-  const fetchShifts = async () => {
+  const fetchShifts = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get('/shifts');
@@ -78,18 +66,18 @@ const Shifts = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       const response = await axios.get('/employees');
       setEmployees(Array.isArray(response.data) ? response.data : (response.data.data || []));
     } catch (error) {
       console.error('Failed to fetch employees:', error);
     }
-  };
+  }, []);
 
-  const fetchAssignments = async () => {
+  const fetchAssignments = useCallback(async () => {
     setAssignmentsLoading(true);
     try {
       const startDate = selectedDate.startOf('month').format('YYYY-MM-DD');
@@ -102,8 +90,21 @@ const Shifts = () => {
     } finally {
       setAssignmentsLoading(false);
     }
-  };
+  }, [selectedDate]);
 
+  useEffect(() => {
+    if (currentCompany) {
+      fetchShifts();
+      fetchEmployees();
+      fetchAssignments();
+    }
+  }, [currentCompany, fetchShifts, fetchEmployees, fetchAssignments]);
+
+  useEffect(() => {
+    if (currentCompany) {
+      fetchAssignments();
+    }
+  }, [currentCompany, selectedDate, fetchAssignments]);
   const handleCreateShift = () => {
     setEditingShift(null);
     form.resetFields();
@@ -154,7 +155,7 @@ const Shifts = () => {
       await axios.delete(`/shifts/${id}`);
       message.success('Shift deleted successfully');
       fetchShifts();
-    } catch (error) {
+    } catch {
       message.error('Failed to delete shift');
     }
   };
@@ -211,7 +212,7 @@ const Shifts = () => {
       await axios.delete(`/shift-assignments/${id}`);
       message.success('Assignment deleted successfully');
       fetchAssignments();
-    } catch (error) {
+    } catch {
       message.error('Failed to delete assignment');
     }
   };

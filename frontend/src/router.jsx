@@ -31,6 +31,7 @@ import Customers from './views/Customers'; // Import Customers
 import Invoices from './views/Invoices'; // Import Invoices
 import Onboarding from './views/Onboarding'; // Import Onboarding
 import Shifts from './views/Shifts'; // Import Shifts
+import Attendance from './views/Attendance';
 import React, { Suspense } from 'react';
 
 // Lazy-load feature pages to reduce initial bundle size
@@ -177,6 +178,14 @@ const router = createBrowserRouter([
         )
       },
       {
+        path: '/attendance',
+        element: (
+          <PrivateRoute requiredPermissions={['attendance.view','time-tracking.view']} anyPermission={true}>
+            <Attendance />
+          </PrivateRoute>
+        )
+      },
+      {
         path: '/surveys',
         element: (
           <PrivateRoute requiredPermissions={['dashboard.view']}>
@@ -195,7 +204,7 @@ const router = createBrowserRouter([
       {
         path: '/workflow-builder',
         element: (
-          <PrivateRoute requiredPermissions={['settings.view']}>
+          <PrivateRoute requiredPermissions={['workflows.view']}>
             <WorkflowBuilder />
           </PrivateRoute>
         )

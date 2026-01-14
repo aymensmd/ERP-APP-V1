@@ -4,7 +4,7 @@ import { Typography, Form, Input, Button, Card } from 'antd';
 const { Title, Paragraph } = Typography;
 
 const DemoRequest = () => {
-  const onFinish = (values) => {
+  const onFinish = () => {
     // Here you would handle the demo request (e.g., send to backend)
     alert('Demo request submitted!');
   };

@@ -83,7 +83,7 @@ const CommunicationHistory = ({ communicableType, communicableId }) => {
       setEditingComm(null);
       form.resetFields();
       fetchCommunications();
-    } catch (error) {
+    } catch {
       message.error('Failed to save communication');
     }
   };
@@ -93,7 +93,7 @@ const CommunicationHistory = ({ communicableType, communicableId }) => {
       await axios.delete(`/communications/${id}`);
       message.success('Communication deleted successfully');
       fetchCommunications();
-    } catch (error) {
+    } catch {
       message.error('Failed to delete communication');
     }
   };

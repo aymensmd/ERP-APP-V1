@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
+ import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Badge, Card, Space, Table, Row, List, Button, Drawer, Form, Select, 
+  Card, Space, Table, Row, Button, Drawer, Form, Select, 
   message, Calendar, Statistic, Tag, Typography, Divider, Col, Descriptions,
-  ConfigProvider, theme, App, Spin
+  theme, Spin
 } from 'antd';
 import { 
   DownCircleTwoTone, UpCircleTwoTone, CalendarTwoTone, UserOutlined, 
@@ -187,7 +187,7 @@ function ToolBox({ tool, expandedTool, setExpandedTool }) {
 }
 
 const VacationComponent = () => {
-  const { token: currentUserToken, user: currentUser } = useStateContext();
+  const { user: currentUser } = useStateContext();
   const { token } = useToken();
   const [expandedRowKeys, setExpandedRowKeys] = useState([]);
   const [userData, setUserData] = useState([]);
@@ -220,9 +220,9 @@ const VacationComponent = () => {
 
   useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [fetchUserData]);
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get('/employees');
@@ -261,7 +261,7 @@ const VacationComponent = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const columns = [
     {
