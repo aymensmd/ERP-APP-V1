@@ -6,13 +6,14 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import {
   Button, Drawer, Typography, Space, Input, message, Form, Select,
-  Tag, InputNumber, Tabs, Card
+  Tag, InputNumber, Tabs, Card, Modal, List
 } from 'antd';
 import {
   MailOutlined, ApiOutlined, ThunderboltOutlined, PartitionOutlined,
   SaveOutlined, BulbOutlined, PlayCircleOutlined, RobotOutlined,
   ClockCircleOutlined, CodeOutlined
 } from '@ant-design/icons';
+import axios from '../axios';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -158,15 +159,49 @@ const NODE_CONFIG_FIELDS = {
   ]
 };
 
+function DataPicker({ availableVariables, targetField, form, updateNodeData }) {
+  const { Text } = Typography;
+  return (
+    <div style={{ marginTop: 8, padding: '10px', background: '#f5f5f5', borderRadius: 6, border: '1px dashed #d9d9d9' }}>
+      <Text type="secondary" style={{ fontSize: 11 }}><CodeOutlined /> Reference Variables:</Text>
+      {availableVariables.length === 0 ? <Text type="secondary" style={{ fontSize: 11 }}>No upstream nodes yet</Text> :
+        <div style={{ maxHeight: 120, overflowY: 'auto' }}>
+          {availableVariables.map(v => (
+            <div key={v.id} style={{ marginBottom: 8 }}>
+              <Text strong style={{ fontSize: 11 }}>{v.label}</Text>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {v.outputs.map(out => (
+                  <Tag key={out} color="blue" style={{ cursor: 'pointer', fontSize: 10 }} onClick={() => {
+                    const current = form.getFieldValue(targetField) || '';
+                    form.setFieldsValue({ [targetField]: `${current}{{context.outputs.${v.id}.${out}}}` });
+                    updateNodeData(form.getFieldsValue());
+                    message.success('Variable inserted', 1);
+                  }}>{out}</Tag>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      }
+    </div>
+  );
+}
+
 export default function WorkflowBuilder() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [theme, setTheme] = useState('light');
+  const [theme] = useState('light');
   const [form] = Form.useForm();
-  const [executionLog, setExecutionLog] = useState([]);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [workflowId, setWorkflowId] = useState(null);
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [versions, setVersions] = useState([]);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [executionId, setExecutionId] = useState(null);
+  const [backendLogs, setBackendLogs] = useState([]);
+  const [opsLoading, setOpsLoading] = useState(false);
 
   const getNodeOutputs = (type) => {
     switch (type) {
@@ -208,7 +243,7 @@ export default function WorkflowBuilder() {
       style: { stroke: isCondition ? (outCount === 0 ? '#52c41a' : '#ff4d4f') : '#1890ff', strokeWidth: 2 },
       markerEnd: { type: MarkerType.ArrowClosed, color: '#1890ff' },
     }, eds));
-  }, [nodes, edges]);
+  }, [nodes, edges, setEdges]);
 
   const onDrop = (event) => {
     event.preventDefault();
@@ -225,11 +260,129 @@ export default function WorkflowBuilder() {
     setNodes(nds => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, ...values, settings: values, completed: false } } : n));
   };
 
+  const ensureWorkflow = async () => {
+    if (workflowId) return workflowId;
+    const name = 'Automation Workflow';
+    const res = await axios.post('/workflows', { name });
+    const wf = res.data?.data || res.data;
+    setWorkflowId(wf.id);
+    return wf.id;
+  };
+
+  const saveGraph = async () => {
+    const ok = validateWorkflow();
+    if (!ok) return;
+    try {
+      setOpsLoading(true);
+      const id = await ensureWorkflow();
+      const payload = {
+        nodes: nodes.map(n => ({
+          id: n.id,
+          position: n.position,
+          data: n.data
+        })),
+        edges: edges.map(e => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          label: e.label || '',
+          data: { settings: {} }
+        }))
+      };
+      await axios.post(`/workflows/${id}/graph`, payload);
+      message.success('Workflow graph saved');
+    } catch {
+      message.error('Failed to save graph');
+    } finally {
+      setOpsLoading(false);
+    }
+  };
+
+  const publishWorkflow = async () => {
+    try {
+      setOpsLoading(true);
+      const id = await ensureWorkflow();
+      await axios.post(`/workflows/${id}/publish`);
+      message.success('Workflow published');
+    } catch {
+      message.error('Failed to publish');
+    } finally {
+      setOpsLoading(false);
+    }
+  };
+
+  const runWorkflow = async () => {
+    try {
+      setOpsLoading(true);
+      const id = await ensureWorkflow();
+      try {
+        const res = await axios.post(`/workflows/${id}/run`, { context: {} });
+        const data = res.data?.data || res.data;
+        setExecutionId(data.execution_id);
+        setLogsOpen(true);
+        await fetchLogs(data.execution_id);
+        message.success('Execution queued');
+      } catch {
+        try {
+          await axios.post(`/workflows/${id}/publish`);
+          const res2 = await axios.post(`/workflows/${id}/run`, { context: {} });
+          const data2 = res2.data?.data || res2.data;
+          setExecutionId(data2.execution_id);
+          setLogsOpen(true);
+          await fetchLogs(data2.execution_id);
+          message.success('Execution queued');
+        } catch {
+          message.error('Failed to run workflow');
+        }
+      }
+    } finally {
+      setOpsLoading(false);
+    }
+  };
+
+  const openVersions = async () => {
+    try {
+      setOpsLoading(true);
+      const id = await ensureWorkflow();
+      const res = await axios.get(`/workflows/${id}/versions`);
+      const data = res.data?.data || res.data;
+      setVersions(Array.isArray(data) ? data : (data.data || []));
+      setVersionsOpen(true);
+    } catch {
+      message.error('Failed to load versions');
+    } finally {
+      setOpsLoading(false);
+    }
+  };
+
+  const rollbackVersion = async (version) => {
+    if (!workflowId) return;
+    try {
+      setOpsLoading(true);
+      await axios.post(`/workflows/${workflowId}/versions/${version}/rollback`);
+      message.success('Rolled back');
+      setVersionsOpen(false);
+    } catch {
+      message.error('Rollback failed');
+    } finally {
+      setOpsLoading(false);
+    }
+  };
+
+  const fetchLogs = async (execId) => {
+    try {
+      const res = await axios.get(`/workflow-executions/${execId}/logs`);
+      const data = res.data?.data || res.data;
+      setBackendLogs(data.logs || []);
+    } catch {
+      setBackendLogs([]);
+    }
+  };
+
   const simulateExecution = async () => {
     const triggerNode = nodes.find(n => n.data.type === 'trigger');
     if (!triggerNode) { message.error('No trigger node found'); return; }
     setIsSimulating(true);
-    setExecutionLog([]);
     setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, executing: false, completed: false } })));
 
     const executeNode = async (nodeId, depth = 0) => {
@@ -237,7 +390,6 @@ export default function WorkflowBuilder() {
       setNodes(nds => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, executing: true } } : n));
       await new Promise(r => setTimeout(r, 600));
       const node = nodes.find(n => n.id === nodeId);
-      setExecutionLog(log => [...log, { nodeId, label: node.data.label, type: node.data.type, time: new Date().toLocaleTimeString() }]);
       setNodes(nds => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, executing: false, completed: true } } : n));
       const outgoingEdges = edges.filter(e => e.source === nodeId);
       if (node.data.type === 'condition') { if (outgoingEdges.length) await executeNode(outgoingEdges[0].target, depth + 1); }
@@ -264,30 +416,7 @@ export default function WorkflowBuilder() {
     return true;
   };
 
-  const DataPicker = ({ targetField }) => (
-    <div style={{ marginTop: 8, padding: '10px', background: '#f5f5f5', borderRadius: 6, border: '1px dashed #d9d9d9' }}>
-      <Text type="secondary" style={{ fontSize: 11 }}><CodeOutlined /> Reference Variables:</Text>
-      {availableVariables.length === 0 ? <Text type="secondary" style={{ fontSize: 11 }}>No upstream nodes yet</Text> :
-        <div style={{ maxHeight: 120, overflowY: 'auto' }}>
-          {availableVariables.map(v => (
-            <div key={v.id} style={{ marginBottom: 8 }}>
-              <Text strong style={{ fontSize: 11 }}>{v.label}</Text>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {v.outputs.map(out => (
-                  <Tag key={out} color="blue" style={{ cursor: 'pointer', fontSize: 10 }} onClick={() => {
-                    const current = form.getFieldValue(targetField) || '';
-                    form.setFieldsValue({ [targetField]: `${current}{{context.outputs.${v.id}.${out}}}` });
-                    updateNodeData(form.getFieldsValue());
-                    message.success('Variable inserted', 1);
-                  }}>{out}</Tag>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      }
-    </div>
-  );
+  
 
   return (
     <div style={{ display: 'flex', height: '100vh', padding: 20, background: theme === 'dark' ? '#141414' : '#f0f2f5', gap: 20 }}>
@@ -317,6 +446,11 @@ export default function WorkflowBuilder() {
           <Space>
             <Button type="primary" ghost icon={<PlayCircleOutlined />} onClick={simulateExecution} loading={isSimulating}>{isSimulating ? 'Running...' : 'Dry Run'}</Button>
             <Button icon={<BulbOutlined />} onClick={validateWorkflow}>Validate</Button>
+            <Button type="primary" icon={<SaveOutlined />} onClick={saveGraph} loading={opsLoading}>Save</Button>
+            <Button onClick={publishWorkflow} loading={opsLoading}>Publish</Button>
+            <Button onClick={runWorkflow} loading={opsLoading}>Run</Button>
+            <Button onClick={openVersions} loading={opsLoading}>Versions</Button>
+            <Button onClick={() => setLogsOpen(true)} disabled={!executionId}>Logs</Button>
           </Space>
         </div>
 
@@ -346,9 +480,39 @@ export default function WorkflowBuilder() {
                 ))}
               </TabPane>
             </Tabs>
-            <DataPicker targetField="outputs" />
+            <DataPicker availableVariables={availableVariables} targetField="outputs" form={form} updateNodeData={updateNodeData} />
           </Form>
         )}
+      </Drawer>
+
+      <Drawer title="Workflow Versions" width={480} open={versionsOpen} onClose={() => setVersionsOpen(false)}>
+        <List
+          dataSource={versions}
+          renderItem={(item) => (
+            <List.Item
+              actions={[<Button onClick={() => rollbackVersion(item.version)}>Rollback</Button>]}
+            >
+              <List.Item.Meta
+                title={`Version ${item.version}`}
+                description={item.status}
+              />
+            </List.Item>
+          )}
+        />
+      </Drawer>
+
+      <Drawer title="Execution Logs" width={600} open={logsOpen} onClose={() => setLogsOpen(false)}>
+        <List
+          dataSource={backendLogs}
+          renderItem={(l) => (
+            <List.Item>
+              <List.Item.Meta
+                title={`${l.type.toUpperCase()} - Node ${l.node_id}`}
+                description={l.message}
+              />
+            </List.Item>
+          )}
+        />
       </Drawer>
     </div>
   );

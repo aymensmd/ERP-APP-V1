@@ -24,9 +24,14 @@ return [
         'http://127.0.0.1:3000',
         'http://localhost:5173',
         'http://127.0.0.1:5173',
+        'https://erp-app-v1.vercel.app',
+        'https://ahmad-sparklike-overprovidently.ngrok-free.dev',
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        'https://*.vercel.app',
+        'https://*.ngrok-free.dev',
+    ],
 
     'allowed_headers' => ['*'],
 

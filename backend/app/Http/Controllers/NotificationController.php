@@ -15,6 +15,7 @@ class NotificationController extends Controller
     {
         try {
             $user = auth()->user();
+            $companyId = $request->attributes->get('current_company_id') ?? session('current_company_id');
             $notifications = [];
 
             // Get upcoming events (within next 7 days)
@@ -65,6 +66,22 @@ class NotificationController extends Controller
 
             $notifications = array_merge($notifications, $vacationUpdates->toArray());
 
+            $ids = array_map(function ($n) {
+                return $n['id'];
+            }, $notifications);
+            if ($companyId && count($ids) > 0) {
+                $readIds = DB::table('notification_reads')
+                    ->where('company_id', $companyId)
+                    ->where('user_id', $user->id)
+                    ->whereIn('notification_id', $ids)
+                    ->pluck('notification_id')
+                    ->toArray();
+                $notifications = array_map(function ($n) use ($readIds) {
+                    $n['read'] = in_array($n['id'], $readIds);
+                    return $n;
+                }, $notifications);
+            }
+
             // Sort by date (most recent first)
             usort($notifications, function($a, $b) {
                 return strtotime($b['created_at']) - strtotime($a['created_at']);
@@ -79,9 +96,24 @@ class NotificationController extends Controller
     public function markAsRead(Request $request, $id)
     {
         try {
-            // In a real application, you'd store read status in a database
-            // For now, we'll just return success
-            return response()->json(['success' => true, 'message' => 'Notification marked as read']);
+            $user = auth()->user();
+            $companyId = $request->attributes->get('current_company_id') ?? session('current_company_id');
+            if (!$companyId) {
+                return response()->json(['error' => 'Company context required'], 400);
+            }
+            DB::table('notification_reads')->updateOrInsert(
+                [
+                    'company_id' => $companyId,
+                    'user_id' => $user->id,
+                    'notification_id' => $id,
+                ],
+                [
+                    'read_at' => now(),
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+            return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to mark notification as read'], 500);
         }
@@ -90,8 +122,31 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request)
     {
         try {
-            // In a real application, you'd update all notifications in the database
-            return response()->json(['success' => true, 'message' => 'All notifications marked as read']);
+            $user = auth()->user();
+            $companyId = $request->attributes->get('current_company_id') ?? session('current_company_id');
+            if (!$companyId) {
+                return response()->json(['error' => 'Company context required'], 400);
+            }
+            $notifications = $this->index($request)->getData(true);
+            $ids = array_map(function ($n) {
+                return $n['id'];
+            }, $notifications);
+            $now = now();
+            foreach ($ids as $nid) {
+                DB::table('notification_reads')->updateOrInsert(
+                    [
+                        'company_id' => $companyId,
+                        'user_id' => $user->id,
+                        'notification_id' => $nid,
+                    ],
+                    [
+                        'read_at' => $now,
+                        'updated_at' => $now,
+                        'created_at' => $now,
+                    ]
+                );
+            }
+            return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to mark all notifications as read'], 500);
         }

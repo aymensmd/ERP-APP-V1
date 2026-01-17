@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\AttendanceRecord;
 use App\Models\Vacation;
 use App\Models\Event;
 use Illuminate\Http\Request;
@@ -89,24 +90,62 @@ class ReportController extends Controller
 
     private function generatePayrollReport($startDate, $endDate)
     {
-        // This is a placeholder - integrate with actual payroll system
-        $employees = User::with('department')->get()->map(function($user) {
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'department' => $user->department->name ?? 'N/A',
-                'base_salary' => 0, // Placeholder - needs payroll integration
-                'bonuses' => 0,
-                'deductions' => 0,
-                'net_salary' => 0,
-            ];
-        });
+        $companyId = request()->attributes->get('current_company_id') ?? session('current_company_id');
+        $companyUserIds = DB::table('company_user')
+            ->where('company_id', $companyId)
+            ->where('status', 'active')
+            ->pluck('user_id')
+            ->toArray();
+
+        $periodStart = Carbon::parse($startDate)->startOfDay();
+        $periodEnd = Carbon::parse($endDate)->endOfDay();
+        $workingDays = 0;
+        $cursor = $periodStart->copy();
+        while ($cursor->lte($periodEnd)) {
+            if ($cursor->isWeekday()) {
+                $workingDays++;
+            }
+            $cursor->addDay();
+        }
+        if ($workingDays <= 0) {
+            $workingDays = 1;
+        }
+
+        $employees = User::with('department')
+            ->whereIn('id', $companyUserIds)
+            ->get()
+            ->map(function($user) use ($periodStart, $periodEnd, $workingDays) {
+                $base = $user->salary ? (float)$user->salary : 0.0;
+                $dailyRate = $base / $workingDays;
+                $hourlyRate = $dailyRate / 8;
+                $records = AttendanceRecord::where('user_id', $user->id)
+                    ->whereBetween('date', [$periodStart->format('Y-m-d'), $periodEnd->format('Y-m-d')])
+                    ->get();
+                $overtimeMinutes = (int)$records->sum('overtime_minutes');
+                $lateDays = (int)$records->where('status', 'late')->count();
+                $absentDays = (int)$records->where('status', 'absent')->count();
+                $bonuses = ($overtimeMinutes / 60.0) * ($hourlyRate * 1.5);
+                $deductions = ($absentDays * $dailyRate) + ($lateDays * ($hourlyRate * 0.5));
+                $net = $base + $bonuses - $deductions;
+                if ($net < 0) {
+                    $net = 0;
+                }
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'department' => $user->department->name ?? 'N/A',
+                    'base_salary' => round($base, 2),
+                    'bonuses' => round($bonuses, 2),
+                    'deductions' => round($deductions, 2),
+                    'net_salary' => round($net, 2),
+                ];
+            });
 
         return [
             'summary' => [
                 'total_employees' => $employees->count(),
-                'total_payroll' => 0,
+                'total_payroll' => round($employees->sum('net_salary'), 2),
             ],
             'employees' => $employees->values()
         ];

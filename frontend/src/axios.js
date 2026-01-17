@@ -1,7 +1,12 @@
 import Axios from 'axios';
 
+const apiBase =
+  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) ||
+  localStorage.getItem('API_BASE_URL') ||
+  'http://localhost:8000/api';
+
 const axios = Axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: apiBase,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -62,5 +67,11 @@ axios.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Add ngrok skip warning header for all requests
+axios.interceptors.request.use((config) => {
+  config.headers['ngrok-skip-browser-warning'] = 'true';
+  return config;
+});
 
 export default axios;

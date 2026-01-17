@@ -60,7 +60,7 @@ export default function Login() {
         <Card className="login-card">
           <div className="login-header">
             <img src={AnyNamecrm} alt="AnyName CRM" className="login-logo" />
-            <h1 className="login-title">Welcome to AnyName</h1>
+            <h1 className="login-title">Teemo</h1>
             <p className="login-subtitle">Your business communication hub</p>
           </div>
           

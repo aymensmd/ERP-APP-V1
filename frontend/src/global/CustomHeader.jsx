@@ -334,7 +334,7 @@ const CustomHeader = () => {
               fontWeight: '600',
               filter: theme === 'dark' ? 'brightness(0) invert(1)' : 'none'
             }}>
-              AnyName CRM
+              Teemo 
             </h1>
           </Flex>
 

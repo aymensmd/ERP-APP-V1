@@ -80,7 +80,9 @@ class RunWorkflowExecution implements ShouldQueue
                 $headers = [];
                 if (!empty($node->settings['headers'])) {
                     try {
-                        $headers = is_array($node->settings['headers']) ? $node->settings['headers'] : json_decode($node->settings['headers'], true) ?: [];
+                        $headers = is_array($node->settings['headers'])
+                            ? $node->settings['headers']
+                            : ((json_decode($node->settings['headers'], true) ?? []));
                     } catch (\Throwable $e) {
                         $headers = [];
                     }
@@ -89,7 +91,10 @@ class RunWorkflowExecution implements ShouldQueue
                 $resp = null;
                 try {
                     if ($method === 'POST') {
-                        $resp = Http::withHeaders($headers)->post($url, is_string($body) ? json_decode($body, true) ?: [] : $body);
+                        $resp = Http::withHeaders($headers)->post(
+                            $url,
+                            is_string($body) ? ((json_decode($body, true) ?? [])) : $body
+                        );
                     } else {
                         $resp = Http::withHeaders($headers)->get($url);
                     }
