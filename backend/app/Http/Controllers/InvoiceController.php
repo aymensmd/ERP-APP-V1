@@ -9,6 +9,7 @@ use App\Models\Lead;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends Controller
 {
@@ -259,15 +260,13 @@ class InvoiceController extends Controller
     public function generatePdf($id)
     {
         try {
-            $invoice = Invoice::with(['customer', 'items', 'payments'])->findOrFail($id);
+            $invoice = Invoice::with(['customer', 'items', 'payments', 'company'])->findOrFail($id);
             
-            // For now, return invoice data
-            // PDF generation can be added later with a library like dompdf or snappy
-            return response()->json([
-                'message' => 'PDF generation not yet implemented',
-                'invoice' => $invoice
-            ]);
+            $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
+            
+            return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
         } catch (\Exception $e) {
+            \Log::error('PDF Generation Error: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to generate PDF'], 500);
         }
     }

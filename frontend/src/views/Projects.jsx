@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Row, Col, Card, Button, Tag, Input, List, Avatar, Progress, ConfigProvider, Spin, message, Modal, Form, DatePicker, Select } from 'antd';
-import { PlusOutlined, TeamOutlined, CalendarOutlined, CheckCircleOutlined, EditOutlined, ProjectOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Typography, Row, Col, Card, Button, Tag, Input, List, Avatar, Progress, ConfigProvider, Spin, message, Modal, Form, DatePicker, Select, Radio } from 'antd';
+import { PlusOutlined, TeamOutlined, CalendarOutlined, CheckCircleOutlined, EditOutlined, ProjectOutlined, DeleteOutlined, UnorderedListOutlined, BarChartOutlined } from '@ant-design/icons';
 import { useStateContext } from '../contexts/ContextProvider';
 import axios from '../axios';
 import dayjs from 'dayjs';
+import { Gantt, ViewMode } from 'gantt-task-react';
+import "gantt-task-react/dist/index.css";
 
 const { Title, Paragraph, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -23,6 +25,7 @@ const Projects = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [users, setUsers] = useState([]);
+  const [viewType, setViewType] = useState('list');
   const [form] = Form.useForm();
 
   const themeStyles = {
@@ -142,6 +145,19 @@ const Projects = () => {
     p.description.toLowerCase().includes(search.toLowerCase())
   );
 
+  const getGanttTasks = () => {
+    return filteredProjects.map(p => ({
+      start: new Date(p.start_date),
+      end: new Date(p.due),
+      name: p.name,
+      id: String(p.id),
+      type: 'project',
+      progress: p.progress || 0,
+      isDisabled: false,
+      styles: { progressColor: colors.primary, progressSelectedColor: colors.primary },
+    }));
+  };
+
   return (
     <ConfigProvider
       theme={{
@@ -187,8 +203,8 @@ const Projects = () => {
             </Button>
           </Col>
         </Row>
-        <Row style={{ marginBottom: '32px' }}>
-          <Col span={24}>
+        <Row style={{ marginBottom: '32px' }} justify="space-between" align="middle">
+          <Col span={12}>
             <Input.Search
               placeholder="Search projects..."
               value={search}
@@ -196,10 +212,13 @@ const Projects = () => {
               style={{ maxWidth: 400 }}
               size="large"
               allowClear
-              onSearch={() => {
-                // Search handled by filtering
-              }}
             />
+          </Col>
+          <Col>
+             <Radio.Group value={viewType} onChange={e => setViewType(e.target.value)} size="large">
+               <Radio.Button value="list"><UnorderedListOutlined /> List</Radio.Button>
+               <Radio.Button value="gantt"><BarChartOutlined /> Gantt</Radio.Button>
+             </Radio.Group>
           </Col>
         </Row>
         {loading ? (
@@ -207,6 +226,7 @@ const Projects = () => {
             <Spin size="large" />
           </div>
         ) : (
+          viewType === 'list' ? (
           <List
             grid={{ gutter: [24, 24], xs: 1, sm: 2, md: 2, lg: 3, xl: 3 }}
             dataSource={filteredProjects}
@@ -280,6 +300,24 @@ const Projects = () => {
             </List.Item>
             )}
           />
+          ) : (
+            <div style={{ background: colors.cardBg, padding: 20, borderRadius: 12, overflowX: 'auto' }}>
+               {filteredProjects.length > 0 ? (
+                 <Gantt
+                   tasks={getGanttTasks()}
+                   viewMode={ViewMode.Month}
+                   onDateChange={(task, start, end) => console.log(task, start, end)}
+                   onProgressChange={(task, progress) => console.log(task, progress)}
+                   onDoubleClick={task => {
+                     const p = projects.find(proj => String(proj.id) === task.id);
+                     if (p) handleEdit(p);
+                   }}
+                   listCellWidth={""}
+                   columnWidth={60}
+                 />
+               ) : <Text>No projects to display in Gantt chart</Text>}
+            </div>
+          )
         )}
 
         {/* Create/Edit Project Modal */}

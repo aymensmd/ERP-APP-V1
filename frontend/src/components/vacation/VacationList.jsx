@@ -11,7 +11,16 @@ const { TextArea } = Input;
 const STATUS_COLORS = {
   'En attente': 'gold',
   'Approuvé': 'green',
-  'Rejeté': 'red'
+  'Rejeté': 'red',
+  'Refusé': 'red',
+};
+
+const STATUS_LABELS = {
+  'En attente': 'Pending',
+  'Approuvé': 'Approved',
+  'Rejeté': 'Rejected',
+  'Refusé': 'Refused',
+  pending: 'Pending',
 };
 
 const VacationList = () => {
@@ -95,7 +104,7 @@ const VacationList = () => {
       key: 'status',
       render: (status) => (
         <Tag color={STATUS_COLORS[status]} style={{ fontSize: '14px', padding: '5px 10px', borderRadius: '8px' }}>
-          {status}
+          {STATUS_LABELS[status] || status || 'Pending'}
         </Tag>
       ),
     },
@@ -138,9 +147,15 @@ const VacationList = () => {
     if (dateRange && Array.isArray(dateRange) && dateRange[0] && dateRange[1]) {
       const [start, end] = dateRange;
       filtered = filtered.filter(v => {
-        const vStart = dayjs(v.start_date);
-        const vEnd = dayjs(v.end_date);
-        return vStart.isSameOrAfter(start, 'day') && vEnd.isSameOrBefore(end, 'day');
+        if (!v.start_date || !v.end_date) return false;
+        const vStart = dayjs(v.start_date).startOf('day');
+        const vEnd = dayjs(v.end_date).endOf('day');
+        const startDay = dayjs(start).startOf('day');
+        const endDay = dayjs(end).endOf('day');
+        return (
+          vStart.valueOf() >= startDay.valueOf() &&
+          vEnd.valueOf() <= endDay.valueOf()
+        );
       });
     }
     return filtered;
@@ -160,9 +175,9 @@ const VacationList = () => {
           allowClear
           suffixIcon={<FilterOutlined />}
         >
-          <Option value="En attente">En attente</Option>
-          <Option value="Approuvé">Approuvé</Option>
-          <Option value="Rejeté">Rejeté</Option>
+          <Option value="En attente">Pending</Option>
+          <Option value="Approuvé">Approved</Option>
+          <Option value="Rejeté">Rejected</Option>
         </Select>
         <DatePicker.RangePicker
           onChange={setDateRange}

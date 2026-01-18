@@ -8,6 +8,7 @@ use App\Models\ShiftAssignment;
 use App\Models\Shift;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\CompanySetting;
 
 class AttendanceController extends Controller
 {
@@ -146,11 +147,20 @@ class AttendanceController extends Controller
             }
         }
 
+        // Get Company Settings for Overtime
+        $minOvertimeMinutes = CompanySetting::where('company_id', $companyId)
+            ->where('key', 'overtime_min_minutes')
+            ->value('value') ?? 30; // Default 30 mins
+
         $overtime = 0;
         if ($expectedEnd) {
             $expectedEndTs = Carbon::parse($today . ' ' . $expectedEnd);
             if ($now->gt($expectedEndTs)) {
-                $overtime = $expectedEndTs->diffInMinutes($now);
+                $diff = $expectedEndTs->diffInMinutes($now);
+                // Apply Rule: Only count if greater than threshold
+                if ($diff >= $minOvertimeMinutes) {
+                    $overtime = $diff;
+                }
             }
         }
 

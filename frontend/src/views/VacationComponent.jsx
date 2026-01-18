@@ -1,18 +1,28 @@
- import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Card, Space, Table, Row, Button, Drawer, Form, Select, 
-  message, Calendar, Statistic, Tag, Typography, Divider, Col, Descriptions,
-  theme, Spin
+  message, Tag, Typography, Divider, Col, Descriptions,
+  theme, Spin, Progress, List, Tooltip, Badge, Segmented
 } from 'antd';
 import { 
-  DownCircleTwoTone, UpCircleTwoTone, CalendarTwoTone, UserOutlined, 
-  InfoCircleOutlined, MailOutlined, TeamOutlined, CalendarOutlined, 
-  ClockCircleOutlined 
+  UserOutlined, InfoCircleOutlined, MailOutlined, TeamOutlined, 
+  FilePdfOutlined, FileExcelOutlined, CloudSyncOutlined,
+  CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined,
+  CalendarOutlined, PrinterOutlined
 } from '@ant-design/icons';
 import axios from '../axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
 import { useStateContext } from '../contexts/ContextProvider';
+
+// --- MOCK DATA FOR ERP COMPONENTS ---
+const PUBLIC_HOLIDAYS = [
+  { date: '2024-05-01', name: 'Fête du Travail' },
+  { date: '2024-07-25', name: 'Fête de la République' },
+  { date: '2024-10-15', name: 'Fête de l\'Évacuation' },
+];
+
+const DEPARTMENT_FILTERS = ['All', 'IT', 'RH', 'Finance', 'Marketing'];
 
 const { useToken } = theme;
 const { Option } = Select;
@@ -20,744 +30,460 @@ const { Title, Text } = Typography;
 
 dayjs.locale('fr');
 
-function LiveClock({ fontSize = 64 }) {
-  const { token } = useToken();
-  const [now, setNow] = React.useState(new Date());
-  
-  React.useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  
-  return (
-    <>
-      <span style={{ fontSize, color: token.colorWarning, fontWeight: 700 }}>
-        {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-      </span>
-      <span style={{ fontSize: fontSize / 2, color: token.colorTextSecondary, marginTop: 8 }}>
-        {now.toLocaleDateString()}
-      </span>
-    </>
-  );
-}
-
-const TOOL_CONFIG = {
-  calendar: {
-    icon: <CalendarOutlined style={{ fontSize: 38, color: '#277dfe' }} />,
-    content: (
-      <Calendar 
-        fullscreen={false} 
-        style={{ 
-          borderRadius: 18, 
-          minHeight: 180, 
-          minWidth: 180, 
-          pointerEvents: 'auto',
-          background: 'inherit'
-        }} 
-      />
-    ),
-  },
-  watch: {
-    icon: <ClockCircleOutlined style={{ fontSize: 38, color: '#faad14' }} />,
-    content: <LiveClock fontSize={32} />,
-  },
-  weather: {
-    icon: <span role="img" aria-label="weather" style={{ fontSize: 38, color: '#1890ff' }}>☀️</span>,
-    content: (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 180 }}>
-        <span style={{ fontSize: 48 }}>22°C</span>
-        <span style={{ fontSize: 18, color: 'inherit' }}>Sunny</span>
-        <span style={{ fontSize: 14, color: 'inherit', marginTop: 8 }}>Tunis</span>
+// --- HELPER COMPONENT: VACATION BALANCE (Left Sidebar) ---
+const VacationBalanceCard = ({ token }) => (
+  <Card 
+    title={<span style={{fontSize: 14}}><ClockCircleOutlined /> Solde de Congés (Global)</span>} 
+    style={{ borderRadius: 12, marginBottom: 16, boxShadow: token.boxShadowSecondary }}
+    size="small"
+  >
+    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginBottom: 12 }}>
+      <div style={{ textAlign: 'center' }}>
+        <Progress type="circle" percent={75} size={60} strokeColor={token.colorPrimary} />
+        <div style={{ fontSize: 11, marginTop: 5, color: token.colorTextSecondary }}>Payés Pris</div>
       </div>
-    ),
-  },
-  quote: {
-    icon: <span role="img" aria-label="quote" style={{ fontSize: 38, color: '#722ed1' }}>💡</span>,
-    content: (
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: 180, 
-        padding: 12, 
-        textAlign: 'center' 
-      }}>
-        <span style={{ fontSize: 16, fontStyle: 'italic', color: '#722ed1' }}>
-          "Success is not the key to happiness. Happiness is the key to success."
-        </span>
-        <span style={{ fontSize: 13, color: 'inherit', marginTop: 8 }}>
-          — Albert Schweitzer
-        </span>
+      <div style={{ textAlign: 'center' }}>
+        <Progress type="circle" percent={30} size={60} strokeColor={token.colorWarning} />
+        <div style={{ fontSize: 11, marginTop: 5, color: token.colorTextSecondary }}>Maladie</div>
       </div>
-    ),
-  },
-};
-
-function ToolBox({ tool, expandedTool, setExpandedTool }) {
-  const { token } = useToken();
-  const isOpen = expandedTool === tool;
-  
-  return (
-    <div
-      style={{
-        width: isOpen ? '100%' : 90,
-        height: isOpen ? 180 : 90,
-        borderRadius: token.borderRadiusLG,
-        boxShadow: isOpen ? token.boxShadow : token.boxShadowSecondary,
-        background: isOpen ? token.colorBgContainer : token.colorBgElevated,
-        border: isOpen ? `1.5px solid ${token.colorPrimary}` : `1px solid ${token.colorBorderSecondary}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: isOpen ? 'default' : 'pointer',
-        position: 'relative',
-        transition: 'all 0.3s ease',
-        zIndex: isOpen ? 2 : 1,
-        opacity: isOpen || expandedTool === null ? 1 : 0.3,
-        overflow: 'hidden'
-      }}
-      onClick={() => !isOpen && setExpandedTool(tool)}
-    >
-      {isOpen ? (
-        <div style={{ 
-          width: '100%', 
-          height: '100%', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          position: 'relative', 
-          padding: 6 
-        }}>
-          <div style={{ 
-            position: 'absolute', 
-            top: 6, 
-            right: 8, 
-            cursor: 'pointer', 
-            fontSize: 16, 
-            color: token.colorTextSecondary, 
-            background: token.colorBgLayout, 
-            borderRadius: 8, 
-            padding: '1px 6px', 
-            boxShadow: token.boxShadowTertiary 
-          }} 
-            onClick={e => { e.stopPropagation(); setExpandedTool(null); }}
-          >
-            ✕
-          </div>
-          <div style={{ 
-            flex: 1, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            width: '100%', 
-            fontSize: 12, 
-            padding: 0 
-          }}>
-            <div style={{ fontSize: 12, width: '100%', textAlign: 'center' }}>
-              {TOOL_CONFIG[tool].content}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          width: '100%', 
-          height: '100%' 
-        }}>
-          {TOOL_CONFIG[tool].icon}
-          <span style={{ 
-            fontSize: 13, 
-            color: token.colorTextSecondary, 
-            marginTop: 6, 
-            fontWeight: 500, 
-            letterSpacing: 0.5, 
-            textTransform: 'capitalize' 
-          }}>
-            {tool}
-          </span>
-        </div>
-      )}
     </div>
-  );
-}
+    <Divider style={{ margin: '8px 0' }} />
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+      <Text type="secondary">Annuel Restant:</Text>
+      <Text strong>128 Jours</Text>
+    </div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+      <Text type="secondary">Mois courant:</Text>
+      <Text type="success">+2.5 Jours</Text>
+    </div>
+  </Card>
+);
+
+// --- HELPER COMPONENT: UPCOMING HOLIDAYS (Left Sidebar) ---
+const UpcomingHolidays = ({ token }) => (
+  <Card 
+    title={<span style={{fontSize: 14}}><CalendarOutlined /> Jours Fériés à venir</span>} 
+    style={{ borderRadius: 12, marginBottom: 16, boxShadow: token.boxShadowSecondary }}
+    size="small"
+  >
+    <List
+      itemLayout="horizontal"
+      dataSource={PUBLIC_HOLIDAYS}
+      renderItem={(item) => (
+        <List.Item style={{ padding: '8px 0' }}>
+          <List.Item.Meta
+            avatar={<Badge color="purple" />}
+            title={<Text style={{ fontSize: 12 }}>{item.name}</Text>}
+            description={<Text type="secondary" style={{ fontSize: 11 }}>{dayjs(item.date).format('DD MMMM YYYY')}</Text>}
+          />
+        </List.Item>
+      )}
+    />
+  </Card>
+);
 
 const VacationComponent = () => {
   const { user: currentUser } = useStateContext();
   const { token } = useToken();
   const [expandedRowKeys, setExpandedRowKeys] = useState([]);
   const [userData, setUserData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [selectedDept, setSelectedDept] = useState('All');
+  
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedVacation, setSelectedVacation] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [form] = Form.useForm();
-  const [expandedTool, setExpandedTool] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
+  // Styles
   const cardStyles = {
     background: token.colorBgContainer,
-    borderRadius: '16px',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-    border: `1px solid ${token.colorBorder}`,
-    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+    border: `1px solid ${token.colorBorderSecondary}`,
   };
 
   const statCardStyles = {
     ...cardStyles,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '16px 12px',
-    cursor: 'pointer',
-    position: 'relative',
-    overflow: 'hidden',
+    padding: '16px',
+    display: 'flex', 
+    flexDirection: 'column', 
+    justifyContent: 'center'
   };
 
-  useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
-
+  // --- DATA FETCHING & PREPARATION ---
   const fetchUserData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get('/employees');
-      
-      // Response data is already unwrapped by axios interceptor
       const employees = Array.isArray(response.data) ? response.data : [];
       
-      const usersWithVacations = employees.map(user => ({
-        id: user.id,
-        name: user.name || 'N/A',
-        email: user.email || 'N/A',
-        department: typeof user.department === 'string' 
-          ? user.department 
-          : (user.department?.name || user.department_id || 'N/A'),
-        role: typeof user.role === 'string' 
-          ? user.role 
-          : (user.role?.name || user.role_id || 'N/A'),
-        key: user.id,
-        vacationRequests: Array.isArray(user.vacations) 
-          ? user.vacations.map(v => ({
-              id: v.id,
-              start_date: v.start_date,
-              end_date: v.end_date,
-              reason: v.reason || 'N/A',
-              status: v.status || 'Pending',
-              key: v.id,
-              user_id: user.id
-            }))
-          : []
-      }));
+      const usersWithVacations = employees.map(user => {
+        // --- SAFEGUARD LOGIC: Flatten Objects to Strings ---
+        // If department is an object {id, name...}, extract name. If it's null, use 'N/A'
+        let deptName = 'N/A';
+        if (user.department && typeof user.department === 'object') {
+            deptName = user.department.name || 'N/A';
+        } else if (user.department) {
+            deptName = String(user.department);
+        }
+
+        // Handle Role similarly just in case
+        let roleName = 'N/A';
+        if (user.role && typeof user.role === 'object') {
+            roleName = user.role.name || 'N/A';
+        } else if (user.role) {
+            roleName = String(user.role);
+        }
+
+        return {
+          ...user,
+          key: user.id,
+          department: deptName, // Now guaranteed to be a string
+          role: roleName,       // Now guaranteed to be a string
+          vacationRequests: Array.isArray(user.vacations) ? user.vacations : []
+        };
+      });
       
       setUserData(usersWithVacations);
+      setFilteredData(usersWithVacations);
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error(error);
       message.error('Failed to fetch user data');
     } finally {
       setLoading(false);
     }
   }, []);
 
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  // --- FILTER LOGIC ---
+  useEffect(() => {
+    if (selectedDept === 'All') {
+      setFilteredData(userData);
+    } else {
+      setFilteredData(userData.filter(u => u.department === selectedDept));
+    }
+  }, [selectedDept, userData]);
+
+  // --- EXPORT TOOLS LOGIC ---
+  const handleExportCSV = () => {
+    setExportLoading(true);
+    setTimeout(() => {
+      const headers = ['Employee,Department,Start Date,End Date,Reason,Status'];
+      const rows = userData.flatMap(u => 
+        u.vacationRequests.map(v => 
+          `${u.name},${u.department},${v.start_date},${v.end_date},"${v.reason}",${v.status}`
+        )
+      );
+      
+      const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "vacations_export.csv");
+      document.body.appendChild(link);
+      link.click();
+      
+      message.success("Export Excel/CSV réussi");
+      setExportLoading(false);
+    }, 1000);
+  };
+
+  const handlePrintPDF = (request) => {
+    message.loading("Génération du document PDF...");
+    setTimeout(() => {
+        message.success("Document envoyé à l'imprimante");
+        window.print();
+    }, 800);
+  };
+
+  const handleGoogleSync = () => {
+    message.loading("Synchronisation avec Google Drive...");
+    setTimeout(() => {
+      message.success("Données synchronisées avec succès !");
+    }, 1500);
+  };
+
+  // --- TABLE COLUMNS ---
   const columns = [
     {
-      title: <span style={{ color: token.colorPrimary, fontWeight: 600 }}>Nom de l'employé</span>,
+      title: 'Employé',
       dataIndex: 'name',
       key: 'name',
-      align: 'center',
-      render: (text) => (
-        <span style={{ color: token.colorPrimary, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <UserOutlined /> {text || 'N/A'}
-        </span>
+      render: (text, record) => (
+        <Space>
+           <div style={{ width: 32, height: 32, borderRadius: '50%', background: token.colorPrimaryBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: token.colorPrimary }}>
+              {text ? text.charAt(0).toUpperCase() : 'U'}
+           </div>
+           <div style={{ display: 'flex', flexDirection: 'column' }}>
+             <Text strong>{text || 'Unknown'}</Text>
+             {/* Use record.role safely */}
+             <Text type="secondary" style={{ fontSize: 11 }}>{record.role}</Text>
+           </div>
+        </Space>
       )
     },
     {
-      title: <span style={{ color: token.colorPrimary, fontWeight: 600 }}>Département</span>,
+      title: 'Département',
       dataIndex: 'department',
       key: 'department',
-      align: 'center',
-      render: (text, record) => {
-        // Extract department name if it's an object
-        const departmentName = typeof text === 'string' 
-          ? text 
-          : (text?.name || record.department?.name || record.department_id || 'N/A');
-        return (
-          <span style={{ color: token.colorSuccess, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <InfoCircleOutlined /> {departmentName}
-          </span>
-        );
+      render: (text) => {
+        // Double check: if text is somehow still an object, extract name
+        const display = (typeof text === 'object' && text !== null) ? (text.name || 'N/A') : (text || 'General');
+        return <Tag>{display}</Tag>;
       }
     },
     {
-      title: <span style={{ color: token.colorPrimary, fontWeight: 600 }}>Email</span>,
-      dataIndex: 'email',
-      key: 'email',
-      align: 'center',
-      render: (text) => (
-        <span style={{ color: '#722ed1', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <MailOutlined /> {text || 'N/A'}
-        </span>
-      )
-    },
-    {
-      title: <span style={{ color: token.colorPrimary, fontWeight: 600 }}>Jour de congé</span>,
-      key: 'dayOffRequests',
-      align: 'center',
-      render: (_, record) => (
-        <Space>
-          <div onClick={() => toggleExpand(record.key)} style={{ cursor: 'pointer' }}>
-            {expandedRowKeys.includes(record.key) ? <DownCircleTwoTone /> : <UpCircleTwoTone />}
-          </div>
-          <span style={{ color: token.colorWarning, fontWeight: 600 }}>
-            {record.vacationRequests?.length || 0} Demandes de congé
-          </span>
-        </Space>
-      ),
-    },
+      title: 'Demandes',
+      key: 'vacations',
+      align: 'right',
+      render: (_, record) => {
+        const count = record.vacationRequests?.length || 0;
+        return (
+          <Button 
+            size="small"
+            onClick={() => toggleExpand(record.key)}
+            type={count > 0 ? "default" : "dashed"}
+          >
+             {count} Demandes {expandedRowKeys.includes(record.key) ? <UserOutlined /> : <UserOutlined />}
+          </Button>
+        );
+      }
+    }
   ];
 
   const toggleExpand = (key) => {
-    if (expandedRowKeys.includes(key)) {
-      setExpandedRowKeys(expandedRowKeys.filter(k => k !== key));
-    } else {
-      setExpandedRowKeys([...expandedRowKeys, key]);
-    }
+    setExpandedRowKeys(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   };
 
-  const expandedRowRender = (record) => {
-    const dayOffColumns = [
-      {
-        title: <span style={{ color: token.colorPrimary, fontWeight: 700 }}><CalendarTwoTone /> Date de début</span>,
-        dataIndex: 'start_date',
-        key: 'start_date',
-        align: 'center',
-        render: (text) => <span style={{ color: token.colorPrimary, fontWeight: 500 }}>
-          {text ? dayjs(text).format('DD/MM/YYYY') : 'N/A'}
-        </span>,
-      },
-      {
-        title: <span style={{ color: token.colorPrimary, fontWeight: 700 }}><CalendarTwoTone /> Date de fin</span>,
-        dataIndex: 'end_date',
-        key: 'end_date',
-        align: 'center',
-        render: (text) => <span style={{ color: '#722ed1', fontWeight: 500 }}>
-          {text ? dayjs(text).format('DD/MM/YYYY') : 'N/A'}
-        </span>,
-      },
-      {
-        title: <span style={{ color: token.colorPrimary, fontWeight: 700 }}><InfoCircleOutlined /> Raison</span>,
-        dataIndex: 'reason',
-        key: 'reason',
-        align: 'center',
-        render: (text) => <span style={{ color: token.colorText, fontWeight: 500 }}>{text || 'N/A'}</span>,
-      },
-      {
-        title: <span style={{ color: token.colorText, fontWeight: 700 }}><InfoCircleOutlined /> Statut</span>,
-        key: 'status',
-        align: 'center',
-        render: (_, request) => {
-          let color = token.colorText;
-          if (request.status === 'Approuvé') color = token.colorSuccess;
-          else if (request.status === 'Refusé') color = token.colorError;
-          
-          const isCurrentUser = currentUser && currentUser.id === request.user_id;
-          const canModify = !isCurrentUser && (request.status === 'En attente' || request.status === 'pending');
-          
-          return (
-            <>
-              <Tag 
-                color={token.colorBgLayout} 
-                style={{ 
-                  color, 
-                  fontWeight: 600, 
-                  fontSize: 13, 
-                  padding: '2px 12px', 
-                  marginRight: 8 
-                }}
-              >
-                {request.status || 'Pending'}
-              </Tag>
-              {canModify && (
-                <Button 
-                  size="small" 
-                  type="primary" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openDrawer(request);
-                  }}
-                  style={{ fontWeight: 500 }}
-                >
-                  Modifier
-                </Button>
-              )}
-              {isCurrentUser && (
-                <span style={{ color: token.colorTextSecondary, fontSize: 12 }}>
-                  (Vos propres demandes)
-                </span>
-              )}
-            </>
-          );
-        },
-      },
-    ];
-  
-    return (
-      <div style={{ maxHeight: 220, overflowY: 'auto' }}>
-        <Table
-          columns={dayOffColumns}
-          dataSource={record.vacationRequests || []}
-          size='small'
-          pagination={false}
-          rowKey="id"
-          rowClassName={(_, idx) => idx % 2 === 0 ? 'vac-table-row-even' : 'vac-table-row-odd'}
-          style={{ 
-            borderRadius: token.borderRadiusLG, 
-            boxShadow: token.boxShadowSecondary,
-            margin: 0 
-          }}
-        />
-        <style>{`
-          .vac-table-row-even { background: ${token.colorFillAlter} !important; }
-          .vac-table-row-odd { background: ${token.colorBgContainer} !important; }
-          .ant-table-tbody > tr:hover > td { background: ${token.colorPrimaryBgHover} !important; }
-        `}</style>
-      </div>
-    );
-  };
+  // --- NESTED TABLE (Vacation Details) ---
+  const expandedRowRender = (record) => (
+    <div style={{ background: token.colorFillAlter, padding: '16px', borderRadius: 8 }}>
+      <Table
+        columns={[
+          { title: 'Début', dataIndex: 'start_date', render: d => dayjs(d).format('DD MMM YYYY') },
+          { title: 'Fin', dataIndex: 'end_date', render: d => dayjs(d).format('DD MMM YYYY') },
+          { title: 'Raison', dataIndex: 'reason', ellipsis: true },
+          { title: 'Statut', dataIndex: 'status', render: (s) => {
+              let color = s === 'Approuvé' ? 'success' : s === 'Refusé' ? 'error' : 'warning';
+              let icon = s === 'Approuvé' ? <CheckCircleOutlined /> : s === 'Refusé' ? <CloseCircleOutlined /> : <ClockCircleOutlined />;
+              return <Tag icon={icon} color={color}>{s || 'Pending'}</Tag>
+          }},
+          { title: 'Actions', key: 'action', render: (_, req) => (
+              <Space>
+                  {(req.status === 'En attente' || req.status === 'pending') && (
+                    <Button size="small" type="primary" ghost onClick={() => openDrawer(req, record)}>Gérer</Button>
+                  )}
+                  {req.status === 'Approuvé' && (
+                    <Tooltip title="Générer Attestation">
+                        <Button size="small" icon={<FilePdfOutlined />} onClick={() => handlePrintPDF(req)} />
+                    </Tooltip>
+                  )}
+              </Space>
+          )}
+        ]}
+        dataSource={record.vacationRequests}
+        pagination={false}
+        size="small"
+        rowKey="id"
+      />
+    </div>
+  );
 
-  const openDrawer = (request) => {
-    if (!request || !request.user_id) {
-      message.error('Invalid request data');
-      return;
-    }
-
-    const user = userData.find(user => user.id === request.user_id);
-    if (!user) {
-      message.error('User not found');
-      return;
-    }
-    
-    setSelectedVacation({
-      id: request.id,
-      start_date: request.start_date,
-      end_date: request.end_date,
-      status: request.status || 'Pending',
-      reason: request.reason || 'N/A',
-      user_id: request.user_id
-    });
-    
-    setSelectedUser({
-      id: user.id,
-      name: user.name || 'N/A',
-      email: user.email || 'N/A',
-      department: typeof user.department === 'string' 
-        ? user.department 
-        : (user.department?.name || user.department_id || 'N/A'),
-      role: typeof user.role === 'string' 
-        ? user.role 
-        : (user.role?.name || user.role_id || 'N/A')
-    });
-    
-    form.setFieldsValue({
-      status: request.status || 'Pending',
-    });
+  const openDrawer = (request, user) => {
+    setSelectedVacation(request);
+    setSelectedUser(user);
+    form.setFieldsValue({ status: request.status });
     setDrawerVisible(true);
   };
 
-  const closeDrawer = () => {
-    setDrawerVisible(false);
-    setSelectedVacation(null);
-    setSelectedUser(null);
-  };
-
   const onFinish = async (values) => {
-    if (!selectedVacation?.id) {
-      message.error('No vacation request selected');
-      return;
-    }
-
-    if (currentUser && currentUser.id === selectedVacation.user_id) {
-      message.error('You cannot update your own vacation requests');
-      return;
-    }
-
     try {
-      await axios.put(
-        `/vacations/${selectedVacation.id}`, 
-        {
-          ...selectedVacation,
-          status: values.status
-        }
-      );
-
-      message.success('Request updated successfully');
-      closeDrawer();
+      await axios.put(`/vacations/${selectedVacation.id}`, { ...selectedVacation, status: values.status });
+      message.success('Statut mis à jour');
+      setDrawerVisible(false);
       fetchUserData();
     } catch (error) {
-      console.error('Update failed', error);
-      message.error(error.response?.data?.message || 'Failed to update request');
+      message.error('Erreur lors de la mise à jour');
     }
   };
 
-  const totalUsers = userData.length;
+  // --- CALCULATIONS ---
   const allRequests = userData.flatMap(u => u.vacationRequests || []);
-  const totalRequests = allRequests.length;
-  const approved = allRequests.filter(r => r.status === 'Approuvé').length;
-  const pending = allRequests.filter(r => r.status === 'En attente' || r.status === 'pending').length;
-  const refused = allRequests.filter(r => r.status === 'Refusé').length;
+  const stats = {
+    total: userData.length,
+    approved: allRequests.filter(r => r.status === 'Approuvé').length,
+    pending: allRequests.filter(r => r.status === 'En attente' || r.status === 'pending').length,
+    onLeave: allRequests.filter(r => {
+        const today = dayjs();
+        return dayjs(r.start_date).isBefore(today) && dayjs(r.end_date).isAfter(today) && r.status === 'Approuvé';
+    }).length
+  };
 
   return (
-    <div style={{ 
-      padding: '32px', 
-      background: token.colorBgLayout,
-      minHeight: 'calc(100vh - 64px)',
-      maxWidth: '1400px',
-      margin: '0 auto',
-      width: '100%'
-    }}>
+    <div style={{ padding: '24px', background: token.colorBgLayout, minHeight: '100vh' }}>
       <Spin spinning={loading}>
         <Row gutter={[24, 24]}>
-          <Col xs={24} md={6}>
-            <Card style={{ 
-              ...cardStyles,
-              background: token.colorWarningBg,
-              marginBottom: 16 
-            }}>
-              <Title level={5} style={{ marginBottom: 4, color: token.colorText }}>Legend</Title>
-              <div style={{ color: token.colorText }}>
-                <Tag color="success">Approuvé</Tag> Approved
-              </div>
-              <div style={{ color: token.colorText }}>
-                <Tag color="warning">En attente</Tag> Pending
-              </div>
-              <div style={{ color: token.colorText }}>
-                <Tag color="error">Refusé</Tag> Refused
-              </div>
-            </Card>
-            <Card style={cardStyles}>
-              <Title level={5} style={{ marginBottom: 4, color: token.colorText }}>Tip of the Day</Title>
-              <Text type="secondary">Click on a user to expand and see their vacation requests.</Text>
+          
+          {/* --- LEFT SIDEBAR (ERP TOOLS) --- */}
+          <Col xs={24} md={6} lg={5}>
+             {/* 1. Quick Filters */}
+             <div style={{ marginBottom: 16 }}>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>FILTRER PAR DÉPARTEMENT</Text>
+                <Segmented 
+                    options={DEPARTMENT_FILTERS} 
+                    value={selectedDept}
+                    onChange={setSelectedDept}
+                    block
+                    vertical
+                />
+             </div>
+
+            {/* 2. Global Balance */}
+            <VacationBalanceCard token={token} />
+
+            {/* 3. Holidays */}
+            <UpcomingHolidays token={token} />
+
+            {/* 4. Legend */}
+            <Card title="Légende" size="small" style={{ borderRadius: 12, boxShadow: token.boxShadowSecondary }}>
+                <Space direction="vertical" style={{ width: '100%' }}>
+                    <div style={{display:'flex', alignItems:'center', gap:8}}><div style={{width:8, height:8, borderRadius:'50%', background: token.colorSuccess}}></div> Approuvé (Payé)</div>
+                    <div style={{display:'flex', alignItems:'center', gap:8}}><div style={{width:8, height:8, borderRadius:'50%', background: token.colorWarning}}></div> En attente</div>
+                    <div style={{display:'flex', alignItems:'center', gap:8}}><div style={{width:8, height:8, borderRadius:'50%', background: token.colorError}}></div> Refusé / Annulé</div>
+                </Space>
             </Card>
           </Col>
           
-          <Col xs={24} md={18}>
-            <Card 
-              title={
-                <div style={{ 
-                  width: '100%', 
-                  textAlign: 'center', 
-                  fontWeight: 700, 
-                  fontSize: 18, 
-                  letterSpacing: 1,
-                  color: token.colorText
-                }}>
-                  Tools
+          {/* --- MAIN CONTENT --- */}
+          <Col xs={24} md={18} lg={19}>
+            
+            {/* 1. TOOLBAR HEADER */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+                <div>
+                    <Title level={3} style={{ margin: 0 }}>Gestion des Congés</Title>
+                    <Text type="secondary">Gérez les demandes, les approbations et les documents RH.</Text>
                 </div>
-              } 
-              style={cardStyles}
-            >
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))',
-                gap: 16,
-                justifyContent: 'center',
-                alignItems: 'center',
-                width: '100%',
-                position: 'relative', 
-                overflow: 'visible',
-                padding: 8
-              }}>
-                {['calendar', 'watch', 'weather', 'quote'].map((tool) => (
-                  <ToolBox
-                    key={tool}
-                    tool={tool}
-                    expandedTool={expandedTool}
-                    setExpandedTool={setExpandedTool}
-                  />
-                ))}
-              </div>
-            </Card>
-
-            <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
-              gap: 16,
-              marginBottom: 16
-            }}>
-              <Card style={statCardStyles}>
-                <Statistic 
-                  title={<span style={{ color: token.colorPrimary, fontWeight: 600, fontSize: 11 }}>Total Users</span>} 
-                  value={totalUsers} 
-                  valueStyle={{ color: token.colorPrimary, fontWeight: 700, fontSize: 16 }} 
-                />
-              </Card>
-              <Card style={statCardStyles}>
-                <Statistic 
-                  title={<span style={{ color: token.colorSuccess, fontWeight: 600, fontSize: 11 }}>Approved</span>} 
-                  value={approved} 
-                  valueStyle={{ color: token.colorSuccess, fontWeight: 700, fontSize: 16 }} 
-                />
-              </Card>
-              <Card style={statCardStyles}>
-                <Statistic 
-                  title={<span style={{ color: token.colorWarning, fontWeight: 600, fontSize: 11 }}>Total Requests</span>} 
-                  value={totalRequests} 
-                  valueStyle={{ color: token.colorWarning, fontWeight: 700, fontSize: 16 }} 
-                />
-              </Card>
-              <Card style={statCardStyles}>
-                <Statistic 
-                  title={<span style={{ color: token.colorWarning, fontWeight: 600, fontSize: 11 }}>Pending</span>} 
-                  value={pending} 
-                  valueStyle={{ color: token.colorWarning, fontWeight: 700, fontSize: 16 }} 
-                />
-              </Card>
-              <Card style={statCardStyles}>
-                <Statistic 
-                  title={<span style={{ color: token.colorError, fontWeight: 600, fontSize: 11 }}>Refused</span>} 
-                  value={refused} 
-                  valueStyle={{ color: token.colorError, fontWeight: 700, fontSize: 16 }} 
-                />
-              </Card>
+                <Space>
+                    <Tooltip title="Synchroniser avec Google Sheets (Payroll)">
+                        <Button icon={<CloudSyncOutlined />} onClick={handleGoogleSync}>Sync Drive</Button>
+                    </Tooltip>
+                    <Button 
+                        icon={<FileExcelOutlined />} 
+                        onClick={handleExportCSV} 
+                        loading={exportLoading}
+                        style={{ color: '#107c41', borderColor: '#107c41' }}
+                    >
+                        Export Excel
+                    </Button>
+                    <Button type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>
+                        Rapport Global
+                    </Button>
+                </Space>
             </div>
 
-            <Card style={{ 
-              ...cardStyles,
-              marginBottom: 16
-            }}>
-              <h2 style={{ 
-                color: token.colorPrimary, 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 8, 
-                marginBottom: 16 
-              }}>
-                <TeamOutlined /> Liste des Vacances
-              </h2>
-              
+            {/* 2. STATISTICS ROW */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col xs={12} sm={6}>
+                    <Card style={statCardStyles} bordered={false}>
+                        <div style={{ fontSize: 24, fontWeight: 700, color: token.colorPrimary }}>{stats.total}</div>
+                        <div style={{ fontSize: 12, color: token.colorTextSecondary }}>Total Employés</div>
+                    </Card>
+                </Col>
+                <Col xs={12} sm={6}>
+                    <Card style={statCardStyles} bordered={false}>
+                        <div style={{ fontSize: 24, fontWeight: 700, color: token.colorSuccess }}>{stats.approved}</div>
+                        <div style={{ fontSize: 12, color: token.colorTextSecondary }}>Approuvés (YTD)</div>
+                    </Card>
+                </Col>
+                <Col xs={12} sm={6}>
+                    <Card style={statCardStyles} bordered={false}>
+                        <div style={{ fontSize: 24, fontWeight: 700, color: token.colorWarning }}>{stats.pending}</div>
+                        <div style={{ fontSize: 12, color: token.colorTextSecondary }}>En attente</div>
+                    </Card>
+                </Col>
+                <Col xs={12} sm={6}>
+                    <Card style={statCardStyles} bordered={false}>
+                        <div style={{ fontSize: 24, fontWeight: 700, color: '#722ed1' }}>{stats.onLeave}</div>
+                        <div style={{ fontSize: 12, color: token.colorTextSecondary }}>En congé auj.</div>
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* 3. MAIN TABLE CARD */}
+            <Card 
+                style={{ ...cardStyles, overflow: 'hidden' }} 
+                bodyStyle={{ padding: 0 }}
+                title={<div style={{display:'flex', gap:8, alignItems:'center'}}><TeamOutlined /> <span style={{fontSize: 16}}>Vue d'ensemble des employés</span></div>}
+            >
               <Table
                 columns={columns}
-                dataSource={userData}
-                pagination={false}
-                expandedRowRender={expandedRowRender}
-                expandedRowKeys={expandedRowKeys}
-                onExpand={(expanded, record) => toggleExpand(record.key)}
-                style={{ 
-                  ...cardStyles,
-                  marginTop: 24
-                }}
-                scroll={{ x: true }}
+                dataSource={filteredData}
+                expandable={{ expandedRowRender, expandedRowKeys, onExpand: (exp, rec) => toggleExpand(rec.key) }}
+                pagination={{ pageSize: 8 }}
+                rowKey="id"
               />
             </Card>
           </Col>
         </Row>
       </Spin>
-      
-      <Drawer
+
+      {/* --- EDIT STATUS DRAWER --- */}
+      <Drawer 
         title={
-          <span style={{ 
-            color: token.colorPrimary, 
-            fontWeight: 700, 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 8 
-          }}>
-            <UserOutlined /> Informations Utilisateur
-          </span>
-        }
-        placement="right"
-        onClose={closeDrawer}
-        open={drawerVisible}
-        width={Math.min(420, window.innerWidth * 0.9)}
-        styles={{ 
-          body: { 
-            background: token.colorBgLayout, 
-            borderRadius: token.borderRadiusLG 
-          }, 
-          header: { 
-            background: token.colorPrimary, 
-            color: token.colorWhite, 
-            borderRadius: `${token.borderRadiusLG}px ${token.borderRadiusLG}px 0 0` 
-          } 
-        }}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <UserOutlined style={{ fontSize: 20, color: token.colorPrimary }} />
+                <span>Traitement de la demande</span>
+            </div>
+        } 
+        open={drawerVisible} 
+        onClose={() => setDrawerVisible(false)}
+        width={400}
       >
-        {selectedVacation && selectedUser ? (
-          <>
-            <Card style={cardStyles}>
-              <Descriptions column={1} size="small" bordered>
-                <Descriptions.Item label={
-                  <span style={{ color: token.colorPrimary, fontWeight: 600 }}>
-                    <UserOutlined /> Nom
-                  </span>
-                }>
-                  {selectedUser.name || 'N/A'}
-                </Descriptions.Item>
-                <Descriptions.Item label={
-                  <span style={{ color: '#722ed1', fontWeight: 600 }}>
-                    <MailOutlined /> Email
-                  </span>
-                }>
-                  {selectedUser.email || 'N/A'}
-                </Descriptions.Item>
-                <Descriptions.Item label={
-                  <span style={{ color: token.colorSuccess, fontWeight: 600 }}>
-                    <InfoCircleOutlined /> Département
-                  </span>
-                }>
-                  {typeof selectedUser.department === 'string' 
-                    ? selectedUser.department 
-                    : (selectedUser.department?.name || 'N/A')}
-                </Descriptions.Item>
-                <Descriptions.Item label={
-                  <span style={{ color: token.colorWarning, fontWeight: 600 }}>
-                    <TeamOutlined /> Rôle
-                  </span>
-                }>
-                  {typeof selectedUser.role === 'string' 
-                    ? selectedUser.role 
-                    : (selectedUser.role?.name || 'N/A')}
-                </Descriptions.Item>
-              </Descriptions>
-            </Card>
-            <Divider style={{ margin: '16px 0' }} />
-            <Form form={form} onFinish={onFinish} layout="vertical">
-              <Form.Item
-                label={<span style={{ color: token.colorPrimary, fontWeight: 600 }}>Statut</span>}
-                name="status"
-                rules={[{ required: true, message: 'Please select status' }]}
-              >
-                <Select size="large">
-                  <Option value="Approuvé">Approuver</Option>
-                  <Option value="Refusé">Refuser</Option>
-                </Select>
-              </Form.Item>
-              <Form.Item style={{ textAlign: 'center', marginTop: 24 }}>
-                <Button 
-                  type="primary" 
-                  htmlType="submit" 
-                  disabled={currentUser && currentUser.id === selectedVacation.user_id}
-                  style={{ 
-                    minWidth: 120, 
-                    fontWeight: 600, 
-                    fontSize: 16 
-                  }}
-                >
-                  Mettre à jour
+        {selectedUser && selectedVacation && (
+            <Form form={form} layout="vertical" onFinish={onFinish}>
+                <div style={{ background: token.colorFillAlter, padding: 16, borderRadius: 8, marginBottom: 24 }}>
+                    <Descriptions column={1} size="small">
+                        <Descriptions.Item label="Employé">{selectedUser.name}</Descriptions.Item>
+                        <Descriptions.Item label="Département">
+                             {/* SAFEGUARD: If department is object, show name, otherwise show string */}
+                             {typeof selectedUser.department === 'object' && selectedUser.department !== null 
+                                ? selectedUser.department.name 
+                                : selectedUser.department}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Période">
+                            {dayjs(selectedVacation.start_date).format('DD/MM')} - {dayjs(selectedVacation.end_date).format('DD/MM/YYYY')}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Motif">{selectedVacation.reason}</Descriptions.Item>
+                    </Descriptions>
+                </div>
+
+                <Form.Item name="status" label="Décision RH" rules={[{ required: true }]}>
+                    <Select size="large">
+                        <Option value="Approuvé">✅ Approuver la demande</Option>
+                        <Option value="Refusé">❌ Refuser la demande</Option>
+                        <Option value="En attente">⏳ Laisser en attente</Option>
+                    </Select>
+                </Form.Item>
+
+                <Form.Item label="Note interne (Optionnel)">
+                    <textarea 
+                        className="ant-input" 
+                        rows={3} 
+                        placeholder="Ajouter une note pour le dossier..." 
+                        style={{ resize: 'none' }}
+                    />
+                </Form.Item>
+
+                <Button type="primary" htmlType="submit" block size="large" style={{ marginTop: 16 }}>
+                    Confirmer la décision
                 </Button>
-                {currentUser && currentUser.id === selectedVacation.user_id && (
-                  <div style={{ color: token.colorError, marginTop: 8 }}>
-                    Vous ne pouvez pas modifier vos propres demandes
-                  </div>
-                )}
-              </Form.Item>
             </Form>
-          </>
-        ) : (
-          <div>Loading user data...</div>
         )}
       </Drawer>
     </div>

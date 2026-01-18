@@ -98,7 +98,11 @@ const Banner = () => {
   const calculateTotalVacationDays = (vacations) => {
     let totalDays = 0;
     vacations
-      .filter(vacation => vacation.status === 'Approuvé')
+      .filter(
+        vacation =>
+          vacation.status === 'Approuvé' ||
+          vacation.status === 'Approved'
+      )
       .forEach(vacation => {
         const startDate = new Date(vacation.start_date);
         const endDate = new Date(vacation.end_date);
@@ -141,7 +145,7 @@ const Banner = () => {
                 marginBottom: 8
               }}
             >
-              Demande de congé
+              Vacation request
             </Title>
             <Text 
               type="secondary" 
@@ -150,7 +154,7 @@ const Banner = () => {
                 color: colors.textSecondary
               }}
             >
-              Faire une demande de congé
+              Submit a new vacation request
             </Text>
             <Flex gap={16} style={{ marginTop: '20px' }}>
               <Button 
@@ -162,7 +166,7 @@ const Banner = () => {
                 }} 
                 onClick={showDrawer}
               >
-                Demande
+                New request
               </Button>
               <Button 
                 size="large" 
@@ -174,7 +178,7 @@ const Banner = () => {
                 }} 
                 onClick={showSecondDrawer}
               >
-                Consulter votre demande
+                View your requests
               </Button>
             </Flex>
           </Flex>
@@ -198,14 +202,14 @@ const Banner = () => {
               {vacationDays} / 25
             </Title>
             <Text style={{ fontSize: '14px', color: colors.textSecondary }}>
-              Jours par an
+              Days per year
             </Text>
           </Card>
         </Flex>
       </Card>
 
       <Drawer
-        title="Faire une demande de congé"
+        title="Submit a vacation request"
         placement="right"
         onClose={closeDrawer}
         open={drawerVisible}
@@ -225,7 +229,7 @@ const Banner = () => {
       </Drawer>
 
       <Drawer
-        title="Consulter ou modifier votre demande"
+        title="View or edit your request"
         placement="right"
         onClose={closeSecondDrawer}
         open={secondDrawerVisible}

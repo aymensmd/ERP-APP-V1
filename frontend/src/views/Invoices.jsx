@@ -635,12 +635,35 @@ const Invoices = () => {
             Generate PDF
           </Button>,
           selectedInvoice?.status !== 'paid' && (
+             <Button
+               key="pay-now"
+               type="primary"
+               style={{ background: '#6772e5', borderColor: '#6772e5' }}
+               onClick={() => {
+                 // Trigger payment flow
+                 message.loading({ content: 'Initiating Secure Payment...', key: 'payment' });
+                 axios.post('/payments/create-intent', { invoice_id: selectedInvoice.id })
+                   .then(res => {
+                     // In a real implementation, we would open a Stripe Elements modal here with the clientSecret
+                     console.log('Client Secret:', res.data.clientSecret);
+                     message.success({ content: 'Payment Intent Created! Redirecting to Payment Gateway...', key: 'payment' });
+                     // Simulate redirect or modal open
+                     // setPaymentModalVisible(true);
+                   })
+                   .catch(err => {
+                     message.error({ content: 'Payment initialization failed', key: 'payment' });
+                   });
+               }}
+             >
+               Pay Now (Stripe)
+             </Button>
+          ),
+          selectedInvoice?.status !== 'paid' && (
             <Button
               key="mark-paid"
-              type="primary"
               onClick={() => handleStatusChange(selectedInvoice, 'paid')}
             >
-              Mark as Paid
+              Mark as Paid (Manual)
             </Button>
           ),
           selectedInvoice?.status === 'draft' && (

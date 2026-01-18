@@ -221,7 +221,7 @@ const { theme, token: contextToken, user } = useStateContext(); // Get user from
           marginBottom: 8,
           letterSpacing: 1,
         }}>
-          Demande de congé
+          Vacation request
         </h2>
         <Divider style={{ 
           margin: '12px 0 24px 0',
@@ -240,24 +240,24 @@ const { theme, token: contextToken, user } = useStateContext(); // Get user from
           }}
         >
           <Form.Item
-            label="Type Congé"
+            label="Leave type"
             name="dayOffType"
             rules={[{ required: true, message: 'Please select type of day off' }]}
           >
             <Select 
               size="large" 
-              placeholder="Sélectionner le type de congé"
+              placeholder="Select leave type"
             >
-              <Option value="Annuel">Annuel</Option>
-              <Option value="Maladie">Maladie</Option>
-              <Option value="Sans solde">Sans solde</Option>
-              <Option value="Maternité">Maternité</Option>
-              <Option value="Paternité">Paternité</Option>
-              <Option value="Autre">Autre</Option>
+              <Option value="Annuel">Annual leave</Option>
+              <Option value="Maladie">Sick leave</Option>
+              <Option value="Sans solde">Unpaid leave</Option>
+              <Option value="Maternité">Maternity leave</Option>
+              <Option value="Paternité">Paternity leave</Option>
+              <Option value="Autre">Other</Option>
             </Select>
           </Form.Item>
           <Form.Item
-            label="Date début"
+            label="Start date"
             name="startDate"
             rules={[{ required: true, message: 'Please select start date' }]}
           >
@@ -266,11 +266,11 @@ const { theme, token: contextToken, user } = useStateContext(); // Get user from
               size="large" 
               disabledDate={disabledStartDate}
               onChange={(date) => setStartDate(date)} 
-              placeholder="Choisir la date de début"
+              placeholder="Select start date"
             />
           </Form.Item>
           <Form.Item
-            label="Date fin"
+            label="End date"
             name="endDate"
             rules={[
               { required: true, message: 'Please select end date' },
@@ -290,11 +290,11 @@ const { theme, token: contextToken, user } = useStateContext(); // Get user from
               style={{ width: '100%' }} 
               size="large" 
               disabledDate={disabledEndDate} 
-              placeholder="Choisir la date de fin"
+              placeholder="Select end date"
             />
           </Form.Item>
           <Form.Item
-            label="Raison"
+            label="Reason"
             name="reason"
             rules={[
               { required: true, message: 'Please provide reason for day off' },
@@ -303,7 +303,7 @@ const { theme, token: contextToken, user } = useStateContext(); // Get user from
           >
             <Input.TextArea 
               size="large" 
-              placeholder="Décrivez la raison de votre congé" 
+              placeholder="Describe the reason for your leave" 
               autoSize={{ minRows: 3, maxRows: 6 }} 
             />
           </Form.Item>
@@ -323,7 +323,7 @@ const { theme, token: contextToken, user } = useStateContext(); // Get user from
                 borderRadius: 8 
               }}
             >
-              {hasPendingVacation ? 'Request Pending' : 'Envoyer'}
+              {hasPendingVacation ? 'Request pending' : 'Submit request'}
             </Button>
           </Form.Item>
         </Form>

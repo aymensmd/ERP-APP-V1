@@ -21,6 +21,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\RoleController;
@@ -123,7 +124,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reports/generate', [ReportController::class, 'generate']);
     
     // Notifications routes
-    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/send', [NotificationController::class, 'send'])->middleware('permission:notifications.create');
+Route::get('/notifications', [NotificationController::class, 'index']);
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     
@@ -222,8 +224,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->middleware('permission:invoices.view');
     
     // Payments routes
+    Route::post('/payments/create-intent', [PaymentController::class, 'createIntent']);
     Route::post('/payments', [PaymentController::class, 'store']);
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy']);
+    
+    // Payroll routes
+    Route::get('/payroll', [PayrollController::class, 'index'])->middleware('permission:payroll.view');
+    Route::post('/payroll/generate', [PayrollController::class, 'store'])->middleware('permission:payroll.create');
+    Route::get('/payroll/{payroll}', [PayrollController::class, 'show'])->middleware('permission:payroll.view');
+    Route::put('/payroll/{payroll}', [PayrollController::class, 'update'])->middleware('permission:payroll.update');
     
     // Onboarding routes
     Route::get('/onboarding/checklist', [OnboardingController::class, 'index'])->middleware('permission:onboarding.view');

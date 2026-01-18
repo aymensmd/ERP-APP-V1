@@ -5,17 +5,26 @@ import {
 } from 'antd';
 import axios from '../axios';
 import dayjs from 'dayjs';
-import 'dayjs/locale/fr';
+import 'dayjs/locale/en';
 import { useStateContext } from '../contexts/ContextProvider';
 
 const { Title } = Typography;
 const { Option } = Select;
 
-dayjs.locale('fr');
+dayjs.locale('en');
 
 const vacationTypes = [
   'Annuel', 'Maladie', 'Sans solde', 'Maternité', 'Paternité', 'Autre',
 ];
+
+const VACATION_TYPE_LABELS = {
+  Annuel: 'Annual leave',
+  Maladie: 'Sick leave',
+  'Sans solde': 'Unpaid leave',
+  Maternité: 'Maternity leave',
+  Paternité: 'Paternity leave',
+  Autre: 'Other',
+};
 
 const VacData = ({ setTotalVacationDays }) => {
   const { token, user } = useStateContext();
@@ -57,7 +66,7 @@ const VacData = ({ setTotalVacationDays }) => {
   const calculateTotalVacationDays = (vacations) => {
     let totalDays = 0;
     vacations
-      .filter(vacation => vacation.status === 'Approuvé')
+      .filter(vacation => vacation.status === 'Approuvé' || vacation.status === 'Approved')
       .forEach(vacation => {
         const startDate = dayjs(vacation.start_date);
         const endDate = dayjs(vacation.end_date);
@@ -83,25 +92,25 @@ const VacData = ({ setTotalVacationDays }) => {
       render: (type) => <span style={{ fontWeight: 500 }}>{type?.name || type || '-'}</span>,
     },
     {
-      title: 'Raison',
+      title: 'Reason',
       dataIndex: 'reason',
       key: 'reason',
       render: (reason) => <span style={{ color: '#888' }}>{reason || '-'}</span>,
     },
     {
-      title: 'Date de début',
+      title: 'Start date',
       dataIndex: 'start_date',
       key: 'start_date',
       render: (date) => date ? dayjs(date).format('DD MMM YYYY') : '-',
     },
     {
-      title: 'Date de fin',
+      title: 'End date',
       dataIndex: 'end_date',
       key: 'end_date',
       render: (date) => date ? dayjs(date).format('DD MMM YYYY') : '-',
     },
     {
-      title: 'Statut',
+      title: 'Status',
       key: 'status',
       render: (_, record) => (
         <Space size="middle">
@@ -110,12 +119,17 @@ const VacData = ({ setTotalVacationDays }) => {
               record.status === 'Approuvé' ? 'success' :
               record.status === 'Refusé' ? 'error' : 'processing'
             }
-            text={record.status || 'Pending'}
+            text={
+              record.status === 'Approuvé' ? 'Approved' :
+              record.status === 'Refusé' ? 'Refused' :
+              record.status === 'En attente' || record.status === 'pending' ? 'Pending' :
+              record.status || 'Pending'
+            }
           />
-          {record.status === 'Pending' ? (
-            <Button type="link" onClick={() => showUpdateDrawer(record)}>Modifier</Button>
+          {record.status === 'Pending' || record.status === 'En attente' || record.status === 'pending' ? (
+            <Button type="link" onClick={() => showUpdateDrawer(record)}>Edit</Button>
           ) : (
-            <span style={{ color: 'rgba(0, 0, 0, 0.25)' }}>Non modifiable</span>
+            <span style={{ color: 'rgba(0, 0, 0, 0.25)' }}>Not editable</span>
           )}
         </Space>
       ),
@@ -150,24 +164,24 @@ const VacData = ({ setTotalVacationDays }) => {
         }
       );
 
-      message.success('Demande mise à jour avec succès');
+      message.success('Request updated successfully');
       closeUpdateDrawer();
       fetchVacations();
     } catch (error) {
       console.error('Update error:', error);
-      message.error(error.response?.data?.message || 'Échec de la mise à jour');
+      message.error(error.response?.data?.message || 'Failed to update request');
     }
   };
 
   const handleDeleteVacation = async () => {
     try {
       await axios.delete(`/vacations/${selectedVacation.id}`);
-      message.success('Demande supprimée avec succès');
+      message.success('Request deleted successfully');
       closeUpdateDrawer();
       fetchVacations();
     } catch (error) {
       console.error('Delete error:', error);
-      message.error(error.response?.data?.message || 'Échec de la suppression');
+      message.error(error.response?.data?.message || 'Failed to delete request');
     }
   };
 
@@ -190,7 +204,7 @@ const VacData = ({ setTotalVacationDays }) => {
       }}
       title={
         <Title level={3} style={{ margin: 0, color: '#1890ff', fontWeight: 600, fontSize: '24px' }}>
-          Mes Vacances
+          My vacation requests
         </Title>
       }
       variant="outlined"
@@ -202,7 +216,7 @@ const VacData = ({ setTotalVacationDays }) => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total) => `Total: ${total} demandes`,
+            showTotal: (total) => `Total: ${total} requests`,
             style: { marginTop: '16px' }
           }}
           rowKey={(record) => record.id}
@@ -211,7 +225,7 @@ const VacData = ({ setTotalVacationDays }) => {
             background: 'transparent'
           }}
           size="middle"
-          locale={{ emptyText: 'Aucune demande de vacances trouvée' }}
+          locale={{ emptyText: 'No vacation requests found' }}
           className="vacation-table"
         />
       </Spin>
@@ -223,7 +237,7 @@ const VacData = ({ setTotalVacationDays }) => {
             fontSize: '20px', 
             fontWeight: 600 
           }}>
-            Modifier la demande de congé
+            Update vacation request
           </span>
         }
         placement="right"
@@ -243,8 +257,8 @@ const VacData = ({ setTotalVacationDays }) => {
           <Form layout="vertical" form={form} onFinish={handleUpdateFormSubmit}>
             <Form.Item
               name="start_date"
-              label="Date de début"
-              rules={[{ required: true, message: 'Veuillez sélectionner une date de début' }]}
+              label="Start date"
+              rules={[{ required: true, message: 'Please select a start date' }]}
             >
               <DatePicker
                 style={{ width: '100%' }}
@@ -255,9 +269,9 @@ const VacData = ({ setTotalVacationDays }) => {
 
             <Form.Item
               name="end_date"
-              label="Date de fin"
+              label="End date"
               rules={[
-                { required: true, message: 'Veuillez sélectionner une date de fin' },
+                { required: true, message: 'Please select an end date' },
                 { validator: validateDates },
               ]}
             >
@@ -271,31 +285,31 @@ const VacData = ({ setTotalVacationDays }) => {
             <Form.Item
               name="type"
               label="Type"
-              rules={[{ required: true, message: 'Veuillez sélectionner un type' }]}
+              rules={[{ required: true, message: 'Please select a type' }]}
             >
-              <Select placeholder="Sélectionner le type">
+              <Select placeholder="Select type">
                 {vacationTypes.map((type) => (
-                  <Option key={type} value={type}>{type}</Option>
+                  <Option key={type} value={type}>{VACATION_TYPE_LABELS[type] || type}</Option>
                 ))}
               </Select>
             </Form.Item>
 
-            <Form.Item name="reason" label="Raison">
-              <Input.TextArea rows={2} placeholder="Raison du congé" />
+            <Form.Item name="reason" label="Reason">
+              <Input.TextArea rows={2} placeholder="Reason for leave" />
             </Form.Item>
 
             <Form.Item>
               <Space>
-                <Button type="primary" htmlType="submit">Modifier</Button>
+                <Button type="primary" htmlType="submit">Update</Button>
                 <Popconfirm
-                  title="Êtes-vous sûr de vouloir supprimer cette demande ?"
+                  title="Are you sure you want to delete this request?"
                   onConfirm={handleDeleteVacation}
-                  okText="Oui"
-                  cancelText="Non"
+                  okText="Yes"
+                  cancelText="No"
                 >
-                  <Button danger>Supprimer</Button>
+                  <Button danger>Delete</Button>
                 </Popconfirm>
-                <Button onClick={closeUpdateDrawer}>Annuler</Button>
+                <Button onClick={closeUpdateDrawer}>Cancel</Button>
               </Space>
             </Form.Item>
           </Form>

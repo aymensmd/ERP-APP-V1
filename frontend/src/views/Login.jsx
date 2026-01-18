@@ -45,7 +45,7 @@ export default function Login() {
         console.error('Error loading companies:', error);
       }
 
-      navigate('/dashboard');
+      navigate('/welcome');
       message.success('Welcome back!');
     } catch (error) {
       message.error(error.response?.data?.message || 'Login failed. Please try again.');

@@ -9,8 +9,40 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
+use App\Notifications\SystemNotification;
+
 class NotificationController extends Controller
 {
+    /**
+     * Send a manual notification (e.g., from Admin dashboard).
+     */
+    public function send(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'title' => 'required|string',
+            'message' => 'required|string',
+            'type' => 'in:info,warning,success,error'
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+        
+        // Ensure company context matches if not admin
+        $companyId = $request->attributes->get('current_company_id');
+        if ($companyId && $user->company_id != $companyId) {
+             return response()->json(['error' => 'User not in current company'], 403);
+        }
+
+        $user->notify(new SystemNotification([
+            'title' => $request->title,
+            'message' => $request->message,
+            'type' => $request->type ?? 'info',
+            'action_url' => $request->action_url ?? null,
+        ]));
+
+        return response()->json(['message' => 'Notification sent']);
+    }
+
     public function index(Request $request)
     {
         try {

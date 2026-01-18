@@ -302,18 +302,28 @@ class EmployeeProfileController extends Controller
         try {
             $companyId = request()->attributes->get('current_company_id') ?? session('current_company_id');
 
-            // Get all users in the company
+            if (!$companyId) {
+                return response()->json([]);
+            }
+
             $users = DB::table('company_user')
                 ->where('company_id', $companyId)
                 ->where('status', 'active')
                 ->join('users', 'company_user.user_id', '=', 'users.id')
-                ->select('users.*', 'company_user.department_id', 'company_user.role_id')
+                ->select(
+                    'users.id',
+                    'users.name',
+                    'users.email',
+                    'users.position',
+                    'users.manager_id',
+                    'company_user.department_id',
+                    'company_user.role_id'
+                )
                 ->get()
-                ->map(function($user) {
+                ->map(function ($user) {
                     return (array) $user;
                 });
 
-            // Build hierarchy
             $hierarchy = $this->buildHierarchy($users);
 
             return response()->json($hierarchy);
@@ -327,25 +337,23 @@ class EmployeeProfileController extends Controller
         $userMap = [];
         $roots = [];
 
-        // Create map of users
         foreach ($users as $user) {
             $userMap[$user['id']] = [
                 'id' => $user['id'],
                 'name' => $user['name'],
                 'email' => $user['email'],
-                'position' => $user['job_title'] ?? 'Employee',
+                'position' => $user['position'] ?? 'Employee',
                 'department_id' => $user['department_id'],
                 'role_id' => $user['role_id'],
                 'children' => []
             ];
         }
 
-        // Build tree
         foreach ($users as $user) {
-            if ($user['manager_id']) {
-                if (isset($userMap[$user['manager_id']])) {
-                    $userMap[$user['manager_id']]['children'][] = &$userMap[$user['id']];
-                }
+            $managerId = $user['manager_id'] ?? null;
+
+            if ($managerId && isset($userMap[$managerId])) {
+                $userMap[$managerId]['children'][] = &$userMap[$user['id']];
             } else {
                 $roots[] = &$userMap[$user['id']];
             }

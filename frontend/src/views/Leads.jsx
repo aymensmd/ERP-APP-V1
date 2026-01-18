@@ -84,7 +84,10 @@ const Leads = () => {
       if (filters.search) params.append('search', filters.search);
 
       const response = await axios.get(`/leads?${params.toString()}`);
-      setLeads(Array.isArray(response.data.data) ? response.data.data : (response.data.data || []));
+      const data = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.data || []);
+      setLeads(data);
     } catch (error) {
       console.error('Error fetching leads:', error);
       message.error('Failed to load leads');

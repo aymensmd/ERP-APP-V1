@@ -71,7 +71,10 @@ const Customers = () => {
       if (filters.search) params.append('search', filters.search);
 
       const response = await axios.get(`/customers?${params.toString()}`);
-      setCustomers(Array.isArray(response.data.data) ? response.data.data : (response.data.data || []));
+      const data = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.data || []);
+      setCustomers(data);
     } catch (error) {
       console.error('Error fetching customers:', error);
       message.error('Failed to load customers');

@@ -134,7 +134,7 @@ const MainContent = () => {
         },
       }}
     >
-      <div style={{ flex: 1, padding: '0 16px' }}>
+      <div style={{ flex: 1, padding: '0 10px' }}>
         <Banner />
         <Divider style={{ margin: '16px 0', borderColor: colors.border }} />
         

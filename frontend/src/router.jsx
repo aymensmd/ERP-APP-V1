@@ -33,11 +33,14 @@ import Onboarding from './views/Onboarding'; // Import Onboarding
 import Shifts from './views/Shifts'; // Import Shifts
 import Attendance from './views/Attendance';
 import React, { Suspense } from 'react';
+import Payroll from './views/Payroll';
+import CompanySettings from './views/CompanySettings';
 
 // Lazy-load feature pages to reduce initial bundle size
 const Achievements = React.lazy(() => import('./views/Achievements'));
 const TaskManagement = React.lazy(() => import('./views/TaskManagement'));
 const Performance = React.lazy(() => import('./views/Performance'));
+
 const router = createBrowserRouter([
   {
     path: '/login',
@@ -65,7 +68,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/app',
-        element: <App />,
+        element: <App />
       },
       {
         path: '/dashboard',
@@ -114,6 +117,22 @@ const router = createBrowserRouter([
         element: (
           <PrivateRoute requiredPermissions={['settings.view']}>
             <SettingsPage />
+          </PrivateRoute>
+        )
+      },
+      {
+        path: '/company-settings',
+        element: (
+          <PrivateRoute requiredPermissions={['settings.view']}>
+            <CompanySettings />
+          </PrivateRoute>
+        )
+      },
+      {
+        path: '/payroll',
+        element: (
+          <PrivateRoute requiredPermissions={['payroll.view']}>
+            <Payroll />
           </PrivateRoute>
         )
       },
@@ -293,7 +312,7 @@ const router = createBrowserRouter([
             <UserSettingView />
           </PrivateRoute>
         )
-      },
+      }
     ]
   },
   {
